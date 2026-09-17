@@ -1,34 +1,43 @@
 # AI Notes
 
-Static GitHub Pages staging project for a newborn sleep tracker.
+Static GitHub Pages project for Tal and Sophie's newborn sleep tracker.
 
 Repo: https://github.com/talrme/sleep-tracker
 
-Live URL convention: https://talrme.github.io/sleep-tracker/
+Live URL: https://talrme.github.io/sleep-tracker/
 
 ## Structure
 
-- Root `index.html`: staging chooser.
-- `option-1` through `option-5`: standalone staging websites.
-- Root `config.js`: shared backend URL and default sync preference for every option.
+- Root `index.html`, `app.js`, and `styles.css`: promoted live app using the option-2 Night Shift direction by default.
+- Root `config.js`: shared Apps Script URL and default sync preference.
 - `backend.sample.gs`: Google Apps Script JSONP backend for a Sheet-bound deployment.
-- `README.md`: user setup instructions.
+- `option-1` through `option-5`: archived staging references from the first design pass.
+- `README.md`: user setup and backend update instructions.
 
-## Shared App Model
-
-All options share identical app logic in `app.js`.
+## App Model
 
 - localStorage key: `newborn-sleep-tracker-v1`
 - people: `Tal`, `Sophie`
 - sleep period: local 9 PM to next 9 PM
-- goal: 420 minutes per person per period
+- default target: 420 minutes per person
 - entries: `id`, `person`, `periodStart`, `minutes`, `createdAt`, `updatedAt`, `deletedAt`
-- backend actions: `snapshot`, `upsertEntry`, `deleteEntry`
+- local settings: `self`, `theme`, `compact`, `reduceMotion`, `autoSync`
+- backend-backed settings: `targets.Tal`, `targets.Sophie`
 
-The staging options differ primarily in CSS and microcopy. When the user chooses one, promote that option's files to the root, keep `backend.sample.gs`, and remove the unselected options.
+## Backend Contract
 
-## Backend Notes
+The frontend uses JSONP through script tags so GitHub Pages can talk to Apps Script without CORS setup.
 
-The frontend uses JSONP via a script tag so it can talk to Apps Script from GitHub Pages without CORS setup.
+Supported actions:
 
-Backend URL is intentionally configured in root `config.js`, not pasted into phones. Each option loads `../config.js`; update `defaultBackendUrl` there if the Apps Script deployment changes. Phone Settings should not expose URL entry.
+- `snapshot`: returns `{ ok, entries, targets }`
+- `upsertEntry`: accepts `{ entry }`
+- `deleteEntry`: accepts `{ id, deletedAt }`
+- `saveTargets`: accepts `{ targets }` and returns `{ ok, targets }`
+
+The updated backend creates two tabs:
+
+- `Entries`: one row per sleep entry, including soft-deleted entries.
+- `Settings`: key/value storage for synced target minutes.
+
+If an older Apps Script is still deployed, entries continue to sync but target changes will show `Targets need backend update`.

@@ -1,4 +1,9 @@
-const SHEET_NAME = "Entries";
+const ENTRIES_SHEET_NAME = "Entries";
+const SETTINGS_SHEET_NAME = "Settings";
+const DEFAULT_TARGETS = {
+  Tal: 420,
+  Sophie: 420
+};
 
 function doGet(e) {
   const action = e.parameter.action || "snapshot";
@@ -7,10 +12,11 @@ function doGet(e) {
   let result;
 
   try {
-    ensureSheet();
+    ensureSheets();
     if (action === "snapshot") result = snapshot();
     else if (action === "upsertEntry") result = upsertEntry(payload.entry);
     else if (action === "deleteEntry") result = deleteEntry(payload.id, payload.deletedAt);
+    else if (action === "saveTargets") result = saveTargets(payload.targets);
     else result = { ok: false, error: "Unknown action: " + action };
   } catch (error) {
     result = { ok: false, error: String(error && error.message ? error.message : error) };
@@ -21,10 +27,15 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
-function ensureSheet() {
+function ensureSheets() {
+  ensureEntriesSheet();
+  ensureSettingsSheet();
+}
+
+function ensureEntriesSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  let sheet = ss.getSheetByName(ENTRIES_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(ENTRIES_SHEET_NAME);
   const headers = ["id", "person", "periodStart", "minutes", "createdAt", "updatedAt", "deletedAt"];
   const current = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
   if (current.join("") !== headers.join("")) {
@@ -34,11 +45,34 @@ function ensureSheet() {
   }
 }
 
+function ensureSettingsSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SETTINGS_SHEET_NAME);
+  const headers = ["key", "value", "updatedAt"];
+  const current = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  if (current.join("") !== headers.join("")) {
+    sheet.clear();
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+  }
+  if (!findSettingRow(sheet, "target_Tal")) sheet.appendRow(["target_Tal", DEFAULT_TARGETS.Tal, new Date().toISOString()]);
+  if (!findSettingRow(sheet, "target_Sophie")) sheet.appendRow(["target_Sophie", DEFAULT_TARGETS.Sophie, new Date().toISOString()]);
+}
+
 function snapshot() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  return {
+    ok: true,
+    entries: readEntries(),
+    targets: readTargets()
+  };
+}
+
+function readEntries() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ENTRIES_SHEET_NAME);
   const values = sheet.getDataRange().getValues();
   const headers = values.shift() || [];
-  const entries = values
+  return values
     .filter(row => row[0])
     .map(row => {
       const entry = {};
@@ -53,12 +87,26 @@ function snapshot() {
         deletedAt: String(entry.deletedAt || "")
       };
     });
-  return { ok: true, entries };
+}
+
+function readTargets() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SETTINGS_SHEET_NAME);
+  const values = sheet.getDataRange().getValues();
+  const targets = Object.assign({}, DEFAULT_TARGETS);
+
+  values.slice(1).forEach(row => {
+    const key = String(row[0] || "");
+    const value = Number(row[1] || 0);
+    if (key === "target_Tal" && value > 0) targets.Tal = value;
+    if (key === "target_Sophie" && value > 0) targets.Sophie = value;
+  });
+
+  return targets;
 }
 
 function upsertEntry(entry) {
   if (!entry || !entry.id) return { ok: false, error: "Missing entry.id" };
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ENTRIES_SHEET_NAME);
   const rowIndex = findRowById(sheet, entry.id);
   const row = [
     entry.id,
@@ -76,7 +124,7 @@ function upsertEntry(entry) {
 
 function deleteEntry(id, deletedAt) {
   if (!id) return { ok: false, error: "Missing id" };
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ENTRIES_SHEET_NAME);
   const rowIndex = findRowById(sheet, id);
   if (!rowIndex) return { ok: true };
   const now = deletedAt || new Date().toISOString();
@@ -85,12 +133,42 @@ function deleteEntry(id, deletedAt) {
   return { ok: true };
 }
 
+function saveTargets(targets) {
+  if (!targets) return { ok: false, error: "Missing targets" };
+  const cleaned = Object.assign({}, DEFAULT_TARGETS);
+  ["Tal", "Sophie"].forEach(person => {
+    const value = Number(targets[person] || 0);
+    if (value > 0) cleaned[person] = value;
+  });
+  upsertSetting("target_Tal", cleaned.Tal);
+  upsertSetting("target_Sophie", cleaned.Sophie);
+  return { ok: true, targets: readTargets() };
+}
+
+function upsertSetting(key, value) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SETTINGS_SHEET_NAME);
+  const rowIndex = findSettingRow(sheet, key);
+  const row = [key, value, new Date().toISOString()];
+  if (rowIndex) sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
+  else sheet.appendRow(row);
+}
+
 function findRowById(sheet, id) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return 0;
   const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
   for (let index = 0; index < ids.length; index += 1) {
     if (String(ids[index][0]) === String(id)) return index + 2;
+  }
+  return 0;
+}
+
+function findSettingRow(sheet, key) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const keys = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  for (let index = 0; index < keys.length; index += 1) {
+    if (String(keys[index][0]) === String(key)) return index + 2;
   }
   return 0;
 }
