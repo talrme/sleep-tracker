@@ -461,7 +461,7 @@ function normalizeTargets(targets) {
 }
 
 function setSyncNote(message) {
-  els.syncNote.textContent = message;
+  if (els.syncNote) els.syncNote.textContent = message;
 }
 
 function currentPeriodStart() {
@@ -548,8 +548,10 @@ function bindEvents() {
   document.querySelector("[data-open-settings]").addEventListener("click", openSettings);
   document.querySelector("[data-close-settings]").addEventListener("click", closeSettings);
   document.querySelector("[data-save-settings]").addEventListener("click", saveSettings);
-  document.querySelector("[data-reset-local]").addEventListener("click", resetLocal);
-  document.querySelector("[data-sync-now]").addEventListener("click", () => syncNow());
+  const resetLocalButton = document.querySelector("[data-reset-local]");
+  if (resetLocalButton) resetLocalButton.addEventListener("click", resetLocal);
+  const syncNowButton = document.querySelector("[data-sync-now]");
+  if (syncNowButton) syncNowButton.addEventListener("click", () => syncNow());
   els.settingsBackdrop.addEventListener("click", closeSettings);
 
   document.querySelector("[data-prev-period]").addEventListener("click", () => {
