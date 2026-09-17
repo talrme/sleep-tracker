@@ -323,11 +323,21 @@ button.danger,
   min-height: 26px;
 }
 
+.entry-row.is-editing {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
 .entry-list {
   color: color-mix(in srgb, var(--ink) 86%, var(--muted));
   font-size: 0.82rem;
   font-weight: 760;
   line-height: 1.35;
+}
+
+.entry-list.is-editing {
+  display: grid;
+  gap: 6px;
 }
 
 .entry-piece {
@@ -363,6 +373,61 @@ button.danger,
   color: var(--accent);
 }
 
+.entry-edit-row {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 8px;
+  padding: 4px 5px 4px 9px;
+  background: color-mix(in srgb, var(--bg) 38%, transparent);
+}
+
+.entry-edit-duration {
+  min-height: 28px;
+  justify-self: start;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 950;
+  text-align: left;
+}
+
+.entry-edit-duration:hover {
+  color: var(--accent);
+  transform: none;
+}
+
+.entry-edit-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.entry-action-button {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--paper) 52%, transparent);
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.entry-action-button:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.entry-action-button.danger:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+}
+
 .entry-separator {
   color: var(--muted);
 }
@@ -387,6 +452,15 @@ button.danger,
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
+.done-editing-button {
+  justify-self: stretch;
+  min-height: 36px;
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background: color-mix(in srgb, var(--accent) 20%, var(--paper));
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
 .quick-add {
   margin-top: 8px;
 }
@@ -405,20 +479,8 @@ button.danger,
 
 .custom-add {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px;
-  gap: 6px;
+  grid-template-columns: 1fr;
   margin-top: 6px;
-}
-
-.custom-add button {
-  padding: 0;
-  background: var(--accent);
-  color: #111525;
-}
-
-.custom-add button:disabled {
-  opacity: 0.34;
-  cursor: default;
 }
 
 input, select {

@@ -9,7 +9,7 @@ Phone-first newborn sleep tracker for Tal and Sophie.
 - Tracks sleep in 9 PM to 9 PM windows.
 - Shows Tal and Sophie as the main two tiles.
 - Quick-adds common sleep chunks: 30m, 45m, 1h, 1h 30m, 2h, and 3h.
-- Supports a quieter custom add flow through the `More...` selector.
+- Supports a quieter custom add flow where choosing a duration from `More...` immediately adds it.
 - Lets each phone choose who appears first with the local `Who am I?` setting.
 - Lets each phone choose its own theme and compact mode.
 - Syncs entries through a Google Sheet-backed Apps Script.
@@ -27,7 +27,7 @@ window.SLEEP_TRACKER_CONFIG = {
 };
 ```
 
-Entries write to the backend immediately. Other phones pick up changes when the page opens, when it returns to the foreground, when `Sync now` is tapped, or during the quiet background sync about once per minute.
+Entries write to the backend immediately. Other phones pick up changes when the page opens, when it returns to the foreground, or during the quiet background sync about once per minute.
 
 Local-only settings:
 
@@ -55,7 +55,7 @@ Target syncing needs the newer script in `backend.sample.gs`. The `/exec` URL ca
 7. Click the pencil/edit icon for the existing web app deployment.
 8. Set `Version` to `New version`.
 9. Click `Deploy`.
-10. Open the live site and tap `Settings -> Sync now`.
+10. Open the live site and let it sync once.
 
 The script will create a new `Settings` tab in the Sheet for target times, and it will return the Sheet URL so the app can show the spreadsheet link in Settings. Existing sleep entries stay in the `Entries` tab.
 

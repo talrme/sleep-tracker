@@ -175,19 +175,31 @@ function personCard(person, periodStart) {
   const toneClass = person === "Tal" ? "tal-card" : "sophie-card";
   const entryHtml = entryListHtml(entries, editing);
   const quickHtml = QUICK_MINUTES.map((minutes) => '<button type="button" data-quick-add="' + person + '" data-minutes="' + minutes + '">' + formatDurationCompact(minutes) + '</button>').join("");
+  const editLabel = editing ? "Done Editing" : "Edit entries";
 
   return '<article class="sleep-card ' + toneClass + '" style="--progress:' + percent + '%">' +
     '<div class="card-top"><div><p class="person-name">' + escapeHtml(person) + '</p><h2>' + formatDuration(total) + '</h2></div><div class="goal-badge"><strong>' + percent + '%</strong><span>of ' + formatDurationCompact(target) + '</span></div></div>' +
     '<div class="progress-track" aria-label="' + escapeHtml(person) + ' sleep progress"><span></span></div>' +
     '<div class="sleep-status"><span></span><strong>' + (remaining ? formatDuration(remaining) + ' to go' : 'done') + '</strong></div>' +
-    '<div class="entry-row"><div class="entry-list ' + (editing ? 'is-editing' : '') + '">' + entryHtml + '</div><button type="button" class="edit-icon" data-toggle-edit="' + person + '" aria-label="' + (editing ? 'Finish editing ' : 'Edit ') + escapeHtml(person) + ' entries">' + (editing ? '✓' : '✎') + '</button></div>' +
+    '<div class="entry-row ' + (editing ? 'is-editing' : '') + '"><div class="entry-list ' + (editing ? 'is-editing' : '') + '">' + entryHtml + '</div><button type="button" class="' + (editing ? 'done-editing-button' : 'edit-icon') + '" data-toggle-edit="' + person + '" aria-label="' + editLabel + ' for ' + escapeHtml(person) + '">' + (editing ? editLabel : '✎') + '</button></div>' +
     '<div class="quick-add"><div>' + quickHtml + '</div></div>' +
-    '<div class="custom-add"><select data-custom-duration="' + person + '"><option value="">More...</option>' + durationOptionsHtml(15, 9 * 60) + '</select><button type="button" data-custom-add="' + person + '" disabled aria-label="Add selected duration">+</button></div>' +
+    '<div class="custom-add"><select data-custom-duration="' + person + '" aria-label="Add custom sleep duration for ' + escapeHtml(person) + '"><option value="">More...</option>' + durationOptionsHtml(15, 9 * 60) + '</select></div>' +
   '</article>';
 }
 
 function entryListHtml(entries, editing) {
   if (!entries.length) return '<span class="empty-entry">No entries yet</span>';
+  if (editing) {
+    return entries.map((entry) => {
+      return '<div class="entry-edit-row">' +
+        '<button type="button" class="entry-edit-duration" data-edit-entry="' + escapeHtml(entry.id) + '">+' + formatDurationClock(entry.minutes) + '</button>' +
+        '<div class="entry-edit-actions">' +
+          '<button type="button" class="entry-action-button" data-edit-entry="' + escapeHtml(entry.id) + '" aria-label="Edit +' + formatDurationClock(entry.minutes) + '">✎</button>' +
+          '<button type="button" class="entry-action-button danger" data-delete-entry="' + escapeHtml(entry.id) + '" aria-label="Delete +' + formatDurationClock(entry.minutes) + '">×</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
   return entries.map((entry, index) => {
     const separator = index < entries.length - 1 ? '<span class="entry-separator">;</span>' : '';
     return '<span class="entry-piece"><button type="button" class="entry-link" data-edit-entry="' + escapeHtml(entry.id) + '">+' + formatDurationClock(entry.minutes) + '</button>' + separator + '</span>';
@@ -227,10 +239,9 @@ function quickAdd(person, minutes) {
   addEntry(person, Number(minutes));
 }
 
-function customAdd(person) {
-  const select = document.querySelector('[data-custom-duration="' + CSS.escape(person) + '"]');
+function customAddFromSelect(select) {
   if (!select?.value) return;
-  addEntry(person, Number(select.value));
+  addEntry(select.dataset.customDuration, Number(select.value));
 }
 
 function addEntry(person, minutes) {
@@ -572,8 +583,7 @@ function bindEvents() {
   document.addEventListener("change", (event) => {
     const customSelect = event.target.closest("[data-custom-duration]");
     if (customSelect) {
-      const button = customSelect.parentElement.querySelector("[data-custom-add]");
-      button.disabled = !customSelect.value;
+      customAddFromSelect(customSelect);
     }
   });
 
@@ -581,12 +591,6 @@ function bindEvents() {
     const quick = event.target.closest("[data-quick-add]");
     if (quick) {
       quickAdd(quick.dataset.quickAdd, quick.dataset.minutes);
-      return;
-    }
-
-    const custom = event.target.closest("[data-custom-add]");
-    if (custom) {
-      customAdd(custom.dataset.customAdd);
       return;
     }
 
@@ -614,6 +618,12 @@ function bindEvents() {
     if (editEntry) {
       const entry = state.entries.find((item) => item.id === editEntry.dataset.editEntry);
       if (entry) openEntryModal(editEntry.dataset.editEntry);
+      return;
+    }
+
+    const deleteEntryButton = event.target.closest("[data-delete-entry]");
+    if (deleteEntryButton) {
+      deleteEntry(deleteEntryButton.dataset.deleteEntry);
       return;
     }
 
