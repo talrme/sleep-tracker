@@ -23,6 +23,7 @@ Live URL: https://talrme.github.io/sleep-tracker/
 - entries: `id`, `person`, `periodStart`, `minutes`, `createdAt`, `updatedAt`, `deletedAt`
 - local settings: `self`, `theme`, `compact`, `reduceMotion`, `autoSync`
 - backend-backed settings: `targets.Tal`, `targets.Sophie`
+- spreadsheet link: read from `config.js` or from `snapshot.spreadsheetUrl`
 
 ## Backend Contract
 
@@ -30,7 +31,7 @@ The frontend uses JSONP through script tags so GitHub Pages can talk to Apps Scr
 
 Supported actions:
 
-- `snapshot`: returns `{ ok, entries, targets }`
+- `snapshot`: returns `{ ok, entries, targets, spreadsheetUrl }`
 - `upsertEntry`: accepts `{ entry }`
 - `deleteEntry`: accepts `{ id, deletedAt }`
 - `saveTargets`: accepts `{ targets }` and returns `{ ok, targets }`

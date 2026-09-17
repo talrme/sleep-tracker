@@ -22,6 +22,7 @@ The Apps Script URL is configured once in `config.js`, so neither phone needs to
 ```js
 window.SLEEP_TRACKER_CONFIG = {
   defaultBackendUrl: "https://script.google.com/macros/s/AKfycbyP_lu_mAzXexuXQx5C0XKTU5srlKaGGSlFlcg9ZU6_s58gg2BxMuUfqxEkJWp9lV8t6w/exec",
+  spreadsheetUrl: "",
   autoSync: true
 };
 ```
@@ -39,6 +40,8 @@ Shared settings:
 - Tal target sleep time
 - Sophie target sleep time
 
+The Settings modal also shows an `Open spreadsheet` link. The updated backend returns the backing Google Sheet URL automatically during sync. If needed, the link can also be hard-coded in `config.js` as `spreadsheetUrl`.
+
 ## Update The Current Apps Script
 
 Target syncing needs the newer script in `backend.sample.gs`. The `/exec` URL can stay the same.
@@ -54,7 +57,7 @@ Target syncing needs the newer script in `backend.sample.gs`. The `/exec` URL ca
 9. Click `Deploy`.
 10. Open the live site and tap `Settings -> Sync now`.
 
-The script will create a new `Settings` tab in the Sheet for target times. Existing sleep entries stay in the `Entries` tab.
+The script will create a new `Settings` tab in the Sheet for target times, and it will return the Sheet URL so the app can show the spreadsheet link in Settings. Existing sleep entries stay in the `Entries` tab.
 
 ## New Backend Setup
 

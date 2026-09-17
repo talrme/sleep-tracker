@@ -10,6 +10,7 @@ const state = {
   editingEntryId: "",
   entries: [],
   targets: { ...DEFAULT_TARGETS },
+  spreadsheetUrl: window.SLEEP_TRACKER_CONFIG?.spreadsheetUrl || "",
   editMode: {},
   settings: {
     self: "Tal",
@@ -32,6 +33,8 @@ const els = {
   compact: document.querySelector("[data-setting-compact]"),
   targetTal: document.querySelector("[data-target-tal]"),
   targetSophie: document.querySelector("[data-target-sophie]"),
+  spreadsheetLink: document.querySelector("[data-spreadsheet-link]"),
+  spreadsheetMissing: document.querySelector("[data-spreadsheet-missing]"),
   syncNote: document.querySelector("[data-sync-note]"),
   entryBackdrop: document.querySelector("[data-entry-backdrop]"),
   entryModal: document.querySelector("[data-entry-modal]"),
@@ -47,6 +50,9 @@ function loadState() {
     if (saved.targets && typeof saved.targets === "object") {
       state.targets = { ...DEFAULT_TARGETS, ...normalizeTargets(saved.targets) };
     }
+    if (typeof saved.spreadsheetUrl === "string" && saved.spreadsheetUrl) {
+      state.spreadsheetUrl = saved.spreadsheetUrl;
+    }
     Object.assign(state.settings, saved.settings || {});
     delete state.settings.backendUrl;
   } catch {
@@ -61,6 +67,7 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     entries: state.entries,
     targets: state.targets,
+    spreadsheetUrl: state.spreadsheetUrl,
     settings: state.settings
   }));
 }
@@ -96,6 +103,19 @@ function renderSettings() {
   els.compact.checked = Boolean(state.settings.compact);
   els.targetTal.value = String(targetFor("Tal"));
   els.targetSophie.value = String(targetFor("Sophie"));
+  renderSpreadsheetLink();
+}
+
+function renderSpreadsheetLink() {
+  const url = state.spreadsheetUrl || window.SLEEP_TRACKER_CONFIG?.spreadsheetUrl || "";
+  if (url) {
+    els.spreadsheetLink.href = url;
+    els.spreadsheetLink.hidden = false;
+    els.spreadsheetMissing.hidden = true;
+  } else {
+    els.spreadsheetLink.hidden = true;
+    els.spreadsheetMissing.hidden = false;
+  }
 }
 
 function durationOptionsHtml(start, end, includeZero = false) {
@@ -298,6 +318,7 @@ async function syncNow(options = {}) {
     if (response?.ok && Array.isArray(response.entries)) {
       mergeEntries(response.entries);
       if (response.targets) state.targets = { ...state.targets, ...normalizeTargets(response.targets) };
+      if (response.spreadsheetUrl) state.spreadsheetUrl = response.spreadsheetUrl;
       saveState();
       render();
       if (!options.quiet) setSyncNote("Synced");

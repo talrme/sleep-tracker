@@ -64,7 +64,8 @@ function snapshot() {
   return {
     ok: true,
     entries: readEntries(),
-    targets: readTargets()
+    targets: readTargets(),
+    spreadsheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
   };
 }
 

@@ -587,6 +587,32 @@ label span,
   font-size: 0.72rem;
 }
 
+.spreadsheet-link {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 78%, var(--bg));
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.spreadsheet-link::after {
+  content: "↗";
+  color: var(--accent);
+  font-weight: 950;
+}
+
+.spreadsheet-link:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--paper));
+  transform: translateY(-1px);
+}
+
 .sync-actions,
 .entry-actions {
   display: grid;
