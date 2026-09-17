@@ -15,9 +15,6 @@
   <main class="app-shell">
     <header class="top-bar">
       <h1>Sleep Tracker</h1>
-      <button type="button" class="settings-button" data-open-settings aria-label="Open settings" title="Settings">
-        <span class="settings-glyph" aria-hidden="true"></span>
-      </button>
     </header>
 
     <section class="period-nav" aria-label="Sleep day controls">
@@ -37,6 +34,12 @@
       </div>
       <div class="history-list" data-history-list></div>
     </section>
+
+    <footer class="bottom-tools">
+      <button type="button" class="settings-button" data-open-settings aria-label="Open settings" title="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+    </footer>
   </main>
 
   <div class="modal-backdrop" data-settings-backdrop hidden></div>
