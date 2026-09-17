@@ -80,16 +80,6 @@ The script will create a new `Settings` tab in the Sheet for target times, and i
 
 The Google Sheet itself can stay private. The Apps Script writes to it as the sheet owner.
 
-## Archived Staging Options
-
-These are kept only as references from the first design pass:
-
-- [Option 1 - Moon Cards](option-1/)
-- [Option 2 - Night Shift](option-2/)
-- [Option 3 - Soft Ledger](option-3/)
-- [Option 4 - Baby Monitor](option-4/)
-- [Option 5 - Split Shift](option-5/)
-
 ## Security Note
 
 This is intentionally simple. Anyone with the Apps Script URL can write to the backend sheet. That is probably fine for this family sleep tracker, but it is not a secure general-purpose backend.

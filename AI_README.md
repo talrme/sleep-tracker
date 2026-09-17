@@ -8,10 +8,9 @@ Live URL: https://talrme.github.io/sleep-tracker/
 
 ## Structure
 
-- Root `index.html`, `app.js`, and `styles.css`: promoted live app using the option-2 Night Shift direction by default.
+- Root `index.html`, `app.js`, and `styles.css`: live app using the Night Shift direction by default.
 - Root `config.js`: shared Apps Script URL and default sync preference.
 - `backend.sample.gs`: Google Apps Script JSONP backend for a Sheet-bound deployment.
-- `option-1` through `option-5`: archived staging references from the first design pass.
 - `README.md`: user setup and backend update instructions.
 
 ## App Model
