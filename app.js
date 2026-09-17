@@ -172,7 +172,7 @@ function entryListHtml(entries, editing) {
   if (!entries.length) return '<span class="empty-entry">No entries yet</span>';
   return entries.map((entry, index) => {
     const separator = index < entries.length - 1 ? '<span class="entry-separator">;</span>' : '';
-    return '<span class="entry-piece"><button type="button" class="entry-link" data-edit-entry="' + escapeHtml(entry.id) + '"' + (editing ? '' : ' tabindex="-1" aria-hidden="true"') + '>+' + formatDurationReadable(entry.minutes) + '</button>' + separator + '</span>';
+    return '<span class="entry-piece"><button type="button" class="entry-link" data-edit-entry="' + escapeHtml(entry.id) + '"' + (editing ? '' : ' tabindex="-1" aria-hidden="true"') + '>+' + formatDurationClock(entry.minutes) + '</button>' + separator + '</span>';
   }).join(" ");
 }
 
@@ -499,13 +499,11 @@ function formatDurationCompact(minutes) {
   return mins ? hrs + "h " + mins + "m" : hrs + "h";
 }
 
-function formatDurationReadable(minutes) {
+function formatDurationClock(minutes) {
   minutes = Math.max(0, Number(minutes || 0));
-  if (minutes < 60) return minutes + " minutes";
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  if (!mins) return hrs + (hrs === 1 ? " hour" : " hours");
-  return hrs + (hrs === 1 ? " hour " : " hours ") + mins + " minutes";
+  return hrs + ":" + String(mins).padStart(2, "0");
 }
 
 function escapeHtml(value) {

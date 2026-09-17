@@ -101,16 +101,21 @@ button { cursor: pointer; color: inherit; }
 }
 
 .top-bar {
-  min-height: 48px;
+  min-height: 56px;
   display: block;
-  padding: 8px 10px;
+  padding: 10px 12px;
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 58%),
+    var(--paper);
 }
 
 .top-bar h1 {
   margin: 0;
-  font-size: 1.55rem;
-  line-height: 1;
+  font-size: clamp(1.82rem, 7.4vw, 2.12rem);
+  line-height: 0.98;
   letter-spacing: 0;
+  text-wrap: nowrap;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 button {
@@ -654,5 +659,5 @@ body.compact-mode .sleep-status {
 
 @media (max-width: 390px) {
   .quick-add div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .top-bar h1 { font-size: 1.35rem; }
+  .top-bar h1 { font-size: 1.72rem; }
 }
