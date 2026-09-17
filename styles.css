@@ -101,21 +101,37 @@ button { cursor: pointer; color: inherit; }
 }
 
 .top-bar {
-  min-height: 56px;
+  min-height: 68px;
   display: block;
-  padding: 10px 12px;
+  padding: 12px 14px 10px;
+  text-align: center;
   background:
-    linear-gradient(110deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 58%),
+    linear-gradient(110deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 58%),
     var(--paper);
 }
 
 .top-bar h1 {
+  position: relative;
+  display: inline-block;
   margin: 0;
-  font-size: clamp(1.82rem, 7.4vw, 2.12rem);
-  line-height: 0.98;
+  font-size: 2.48rem;
+  line-height: 0.94;
   letter-spacing: 0;
-  text-wrap: nowrap;
-  text-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 22%, transparent);
+  white-space: nowrap;
+  font-weight: 1000;
+  text-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.top-bar h1::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: -8px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tal), var(--accent), var(--sophie));
+  opacity: 0.86;
 }
 
 button {
@@ -869,6 +885,11 @@ body.compact-mode .sleep-status {
 
 @media (max-width: 390px) {
   .quick-add div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .top-bar h1 { font-size: 1.72rem; }
+  .top-bar { min-height: 62px; }
+  .top-bar h1 { font-size: 2.12rem; }
   .theme-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 340px) {
+  .top-bar h1 { font-size: 1.92rem; }
 }
