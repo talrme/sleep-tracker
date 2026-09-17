@@ -40,8 +40,8 @@ Each option is fully functional with local browser storage. Each one uses the sa
    - Who has access: `Anyone`
 10. Click `Deploy` and authorize the script when Google asks.
 11. Copy the Web app URL ending in `/exec`.
-12. Send that `/exec` URL to Codex.
-13. Codex will put it in the repo's root `config.js` as `defaultBackendUrl` and push it.
+12. Put that `/exec` URL in the repo's root `config.js` as `defaultBackendUrl`.
+13. Push the change to GitHub.
 14. Once GitHub Pages updates, both phones can just open the live site. No phone needs the URL pasted into Settings.
 
 The Google Sheet itself can stay private. The Apps Script writes to it as the sheet owner.
@@ -52,12 +52,12 @@ The shared backend is configured in one checked-in file:
 
 ```js
 window.SLEEP_TRACKER_CONFIG = {
-  defaultBackendUrl: "https://script.google.com/macros/s/.../exec",
+  defaultBackendUrl: "https://script.google.com/macros/s/AKfycbyP_lu_mAzXexuXQx5C0XKTU5srlKaGGSlFlcg9ZU6_s58gg2BxMuUfqxEkJWp9lV8t6w/exec",
   autoSync: true
 };
 ```
 
-Right now `defaultBackendUrl` is intentionally blank until the Apps Script deployment URL exists.
+The checked-in site is already configured with the current Apps Script deployment URL.
 
 ## Security Note
 

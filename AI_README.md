@@ -31,4 +31,4 @@ The staging options differ primarily in CSS and microcopy. When the user chooses
 
 The frontend uses JSONP via a script tag so it can talk to Apps Script from GitHub Pages without CORS setup.
 
-Backend URL is intentionally configured in root `config.js`, not pasted into phones. Each option loads `../config.js`; when an Apps Script `/exec` URL is available, update `defaultBackendUrl` there and push. Phone Settings should not expose URL entry.
+Backend URL is intentionally configured in root `config.js`, not pasted into phones. Each option loads `../config.js`; update `defaultBackendUrl` there if the Apps Script deployment changes. Phone Settings should not expose URL entry.
