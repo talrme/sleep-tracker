@@ -57,10 +57,11 @@
         <button type="button" class="plain-x" data-close-settings aria-label="Close settings">×</button>
       </header>
 
-      <label>
-        <span>Apps Script URL</span>
-        <input data-backend-url type="url" placeholder="https://script.google.com/macros/s/.../exec">
-      </label>
+      <div class="settings-config">
+        <span>Sync backend</span>
+        <strong>Configured in repo</strong>
+        <small>The shared backend is loaded from the site config, so neither phone needs setup.</small>
+      </div>
 
       <label class="toggle-row">
         <span>Sync on open</span>
@@ -118,7 +119,7 @@
     </div>
   </section>
 
-  <script src="config.js"></script>
+  <script src="../config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

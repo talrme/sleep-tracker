@@ -10,8 +10,7 @@ const state = {
   editingEntryId: "",
   entries: [],
   settings: {
-    backendUrl: window.SLEEP_TRACKER_CONFIG?.defaultBackendUrl || "",
-    autoSync: window.SLEEP_TRACKER_CONFIG?.autoSync ?? false,
+    autoSync: window.SLEEP_TRACKER_CONFIG?.autoSync ?? true,
     reduceMotion: false
   }
 };
@@ -23,7 +22,6 @@ const els = {
   historyList: document.querySelector("[data-history-list]"),
   settingsBackdrop: document.querySelector("[data-settings-backdrop]"),
   settingsModal: document.querySelector("[data-settings-modal]"),
-  backendUrl: document.querySelector("[data-backend-url]"),
   autoSync: document.querySelector("[data-auto-sync]"),
   reduceMotion: document.querySelector("[data-reduce-motion]"),
   syncNote: document.querySelector("[data-sync-note]"),
@@ -42,6 +40,7 @@ function loadState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (Array.isArray(saved.entries)) state.entries = saved.entries;
     Object.assign(state.settings, saved.settings || {});
+    delete state.settings.backendUrl;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -97,7 +96,6 @@ function render() {
 }
 
 function renderSettings() {
-  els.backendUrl.value = state.settings.backendUrl || "";
   els.autoSync.checked = Boolean(state.settings.autoSync);
   els.reduceMotion.checked = Boolean(state.settings.reduceMotion);
 }
@@ -270,7 +268,6 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  state.settings.backendUrl = els.backendUrl.value.trim();
   state.settings.autoSync = els.autoSync.checked;
   state.settings.reduceMotion = els.reduceMotion.checked;
   saveState();
@@ -286,8 +283,8 @@ function resetLocal() {
 }
 
 async function syncNow() {
-  if (!state.settings.backendUrl) {
-    setSyncNote("Saved locally");
+  if (!configuredBackendUrl()) {
+    setSyncNote("Backend URL needed in config.js");
     return;
   }
   setSyncNote("Syncing...");
@@ -308,7 +305,7 @@ async function syncNow() {
 }
 
 function syncEntry(entry) {
-  if (!state.settings.backendUrl || entry._sample) return;
+  if (!configuredBackendUrl() || entry._sample) return;
   backendRequest("upsertEntry", { entry }).then(() => setSyncNote("Synced")).catch((error) => {
     console.warn(error);
     setSyncNote("Saved locally");
@@ -316,7 +313,7 @@ function syncEntry(entry) {
 }
 
 function syncDelete(entry) {
-  if (!state.settings.backendUrl || entry._sample) return;
+  if (!configuredBackendUrl() || entry._sample) return;
   backendRequest("deleteEntry", { id: entry.id, deletedAt: entry.deletedAt }).then(() => setSyncNote("Synced")).catch((error) => {
     console.warn(error);
     setSyncNote("Saved locally");
@@ -326,7 +323,7 @@ function syncDelete(entry) {
 function backendRequest(action, payload = {}) {
   return new Promise((resolve, reject) => {
     const callbackName = "sleepTrackerCallback_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    const url = new URL(state.settings.backendUrl);
+    const url = new URL(configuredBackendUrl());
     url.searchParams.set("action", action);
     url.searchParams.set("callback", callbackName);
     if (Object.keys(payload).length) url.searchParams.set("payload", JSON.stringify(payload));
@@ -356,6 +353,10 @@ function backendRequest(action, payload = {}) {
     script.src = url.toString();
     document.body.appendChild(script);
   });
+}
+
+function configuredBackendUrl() {
+  return window.SLEEP_TRACKER_CONFIG?.defaultBackendUrl || "";
 }
 
 function mergeEntries(incoming) {
@@ -510,7 +511,7 @@ function init() {
   loadState();
   bindEvents();
   render();
-  setSyncNote(state.settings.backendUrl ? "Ready to sync" : "Saved locally");
+  setSyncNote(configuredBackendUrl() ? "Ready to sync" : "Backend URL needed in config.js");
   if (state.settings.autoSync) syncNow();
 }
 

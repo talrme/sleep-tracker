@@ -22,7 +22,8 @@ Each option is fully functional with local browser storage. Each one uses the sa
 - Quick-add buttons: 30m, 45m, 1h, 1h 30m, 2h, 3h.
 - Custom duration dropdown runs in 15-minute increments up to 9 hours.
 - Edit mode exposes edit/delete controls for entries in each person card.
-- Settings stores the Apps Script URL, sync preference, and reduce-motion preference in browser localStorage.
+- The Apps Script URL is configured once in `config.js` in the repo, so neither phone needs URL setup.
+- Settings stores only phone-local preferences like sync-on-open and reduce motion.
 
 ## Google Sheet Backend Setup
 
@@ -39,10 +40,24 @@ Each option is fully functional with local browser storage. Each one uses the sa
    - Who has access: `Anyone`
 10. Click `Deploy` and authorize the script when Google asks.
 11. Copy the Web app URL ending in `/exec`.
-12. Open one of the staging sites on your phone, go to Settings, paste the URL, and tap Save.
-13. Do the same on the other phone.
+12. Send that `/exec` URL to Codex.
+13. Codex will put it in the repo's root `config.js` as `defaultBackendUrl` and push it.
+14. Once GitHub Pages updates, both phones can just open the live site. No phone needs the URL pasted into Settings.
 
 The Google Sheet itself can stay private. The Apps Script writes to it as the sheet owner.
+
+## Where The Backend URL Goes
+
+The shared backend is configured in one checked-in file:
+
+```js
+window.SLEEP_TRACKER_CONFIG = {
+  defaultBackendUrl: "https://script.google.com/macros/s/.../exec",
+  autoSync: true
+};
+```
+
+Right now `defaultBackendUrl` is intentionally blank until the Apps Script deployment URL exists.
 
 ## Security Note
 

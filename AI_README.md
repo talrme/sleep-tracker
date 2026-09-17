@@ -10,6 +10,7 @@ Live URL convention: https://talrme.github.io/sleep-tracker/
 
 - Root `index.html`: staging chooser.
 - `option-1` through `option-5`: standalone staging websites.
+- Root `config.js`: shared backend URL and default sync preference for every option.
 - `backend.sample.gs`: Google Apps Script JSONP backend for a Sheet-bound deployment.
 - `README.md`: user setup instructions.
 
@@ -28,4 +29,6 @@ The staging options differ primarily in CSS and microcopy. When the user chooses
 
 ## Backend Notes
 
-The frontend uses JSONP via a script tag so it can talk to Apps Script from GitHub Pages without CORS setup. Backend URL is stored in browser localStorage from Settings. No default backend URL is checked in yet.
+The frontend uses JSONP via a script tag so it can talk to Apps Script from GitHub Pages without CORS setup.
+
+Backend URL is intentionally configured in root `config.js`, not pasted into phones. Each option loads `../config.js`; when an Apps Script `/exec` URL is available, update `defaultBackendUrl` there and push. Phone Settings should not expose URL entry.
