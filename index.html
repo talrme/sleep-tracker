@@ -63,15 +63,27 @@
             <option>Sophie</option>
           </select>
         </label>
-        <label>
+        <div class="theme-setting">
           <span>Style</span>
-          <select data-setting-theme>
-            <option value="night">Night Shift</option>
-            <option value="moon">Moon Cards</option>
-            <option value="ledger">Soft Ledger</option>
-            <option value="sunrise">Sunrise</option>
-          </select>
-        </label>
+          <div class="theme-picker" role="group" aria-label="Style">
+            <button type="button" data-theme-option="night" aria-pressed="false" title="Night Shift">
+              <span class="theme-icon theme-icon--night" aria-hidden="true"><i></i></span>
+              <span>Night</span>
+            </button>
+            <button type="button" data-theme-option="moon" aria-pressed="false" title="Moon Cards">
+              <span class="theme-icon theme-icon--moon" aria-hidden="true"><i></i></span>
+              <span>Moon</span>
+            </button>
+            <button type="button" data-theme-option="ledger" aria-pressed="false" title="Soft Ledger">
+              <span class="theme-icon theme-icon--ledger" aria-hidden="true"><i></i></span>
+              <span>Ledger</span>
+            </button>
+            <button type="button" data-theme-option="sunrise" aria-pressed="false" title="Sunrise">
+              <span class="theme-icon theme-icon--sunrise" aria-hidden="true"><i></i></span>
+              <span>Sunrise</span>
+            </button>
+          </div>
+        </div>
         <label class="toggle-row">
           <span>Compact mode</span>
           <input type="checkbox" data-setting-compact>
@@ -79,7 +91,7 @@
       </section>
 
       <section class="settings-section" aria-label="Sleep target settings">
-        <h3>Targets</h3>
+        <h3>Sleep Targets</h3>
         <div class="target-grid">
           <label>
             <span>Tal</span>

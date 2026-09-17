@@ -29,7 +29,7 @@ const els = {
   settingsBackdrop: document.querySelector("[data-settings-backdrop]"),
   settingsModal: document.querySelector("[data-settings-modal]"),
   self: document.querySelector("[data-setting-self]"),
-  theme: document.querySelector("[data-setting-theme]"),
+  themeButtons: Array.from(document.querySelectorAll("[data-theme-option]")),
   compact: document.querySelector("[data-setting-compact]"),
   targetTal: document.querySelector("[data-target-tal]"),
   targetSophie: document.querySelector("[data-target-sophie]"),
@@ -99,11 +99,19 @@ function renderSelectOptions() {
 
 function renderSettings() {
   els.self.value = state.settings.self;
-  els.theme.value = state.settings.theme;
+  renderThemeButtons();
   els.compact.checked = Boolean(state.settings.compact);
   els.targetTal.value = String(targetFor("Tal"));
   els.targetSophie.value = String(targetFor("Sophie"));
   renderSpreadsheetLink();
+}
+
+function renderThemeButtons() {
+  els.themeButtons.forEach((button) => {
+    const selected = button.dataset.themeOption === state.settings.theme;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
 }
 
 function renderSpreadsheetLink() {
@@ -289,7 +297,6 @@ function closeSettings() {
 
 function saveSettings() {
   state.settings.self = els.self.value;
-  state.settings.theme = els.theme.value;
   state.settings.compact = els.compact.checked;
   state.targets = {
     Tal: Number(els.targetTal.value || DEFAULT_TARGETS.Tal),
@@ -299,6 +306,13 @@ function saveSettings() {
   closeSettings();
   render();
   syncTargets();
+}
+
+function setTheme(theme) {
+  if (!["night", "moon", "ledger", "sunrise"].includes(theme)) return;
+  state.settings.theme = theme;
+  saveState();
+  render();
 }
 
 function resetLocal() {
@@ -563,6 +577,12 @@ function bindEvents() {
       const key = cardKey(toggle.dataset.toggleEdit, state.selectedStart);
       state.editMode[key] = !state.editMode[key];
       render();
+      return;
+    }
+
+    const theme = event.target.closest("[data-theme-option]");
+    if (theme) {
+      setTheme(theme.dataset.themeOption);
       return;
     }
 
