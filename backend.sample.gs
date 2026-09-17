@@ -43,6 +43,7 @@ function ensureEntriesSheet() {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.setFrozenRows(1);
   }
+  sheet.getRange(1, 3, sheet.getMaxRows(), 1).setNumberFormat("@");
 }
 
 function ensureSettingsSheet() {
@@ -81,7 +82,7 @@ function readEntries() {
       return {
         id: String(entry.id || ""),
         person: String(entry.person || ""),
-        periodStart: String(entry.periodStart || ""),
+        periodStart: normalizePeriodStart(entry.periodStart),
         minutes: Number(entry.minutes || 0),
         createdAt: String(entry.createdAt || ""),
         updatedAt: String(entry.updatedAt || ""),
@@ -112,7 +113,7 @@ function upsertEntry(entry) {
   const row = [
     entry.id,
     entry.person || "",
-    entry.periodStart || "",
+    normalizePeriodStart(entry.periodStart),
     Number(entry.minutes || 0),
     entry.createdAt || new Date().toISOString(),
     entry.updatedAt || new Date().toISOString(),
@@ -172,4 +173,18 @@ function findSettingRow(sheet, key) {
     if (String(keys[index][0]) === String(key)) return index + 2;
   }
   return 0;
+}
+
+function normalizePeriodStart(value) {
+  if (!value) return "";
+  if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const parsed = new Date(text);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  return text;
 }

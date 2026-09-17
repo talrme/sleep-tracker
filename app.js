@@ -46,7 +46,7 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (Array.isArray(saved.entries)) {
-      state.entries = saved.entries.filter((entry) => !entry._sample);
+      state.entries = saved.entries.filter((entry) => !entry._sample).map(normalizeEntry);
     }
     if (saved.targets && typeof saved.targets === "object") {
       state.targets = { ...DEFAULT_TARGETS, ...normalizeTargets(saved.targets) };
@@ -454,13 +454,27 @@ function configuredBackendUrl() {
 function mergeEntries(incoming) {
   const byId = new Map(state.entries.map((entry) => [entry.id, entry]));
   incoming.forEach((entry) => {
-    if (!entry.id) return;
-    const current = byId.get(entry.id);
-    if (!current || String(entry.updatedAt || "") >= String(current.updatedAt || "")) {
-      byId.set(entry.id, entry);
+    const normalized = normalizeEntry(entry);
+    if (!normalized.id) return;
+    const current = byId.get(normalized.id);
+    if (!current || String(normalized.updatedAt || "") >= String(current.updatedAt || "")) {
+      byId.set(normalized.id, normalized);
     }
   });
   state.entries = Array.from(byId.values()).filter((entry) => !entry._sample);
+}
+
+function normalizeEntry(entry) {
+  return {
+    ...entry,
+    id: String(entry?.id || ""),
+    person: String(entry?.person || ""),
+    periodStart: normalizePeriodStart(entry?.periodStart),
+    minutes: Number(entry?.minutes || 0),
+    createdAt: String(entry?.createdAt || ""),
+    updatedAt: String(entry?.updatedAt || ""),
+    deletedAt: String(entry?.deletedAt || "")
+  };
 }
 
 function normalizeTargets(targets) {
@@ -483,8 +497,13 @@ function currentPeriodStart() {
   return isoDate(start);
 }
 
-function normalizePeriodStart(value) {
-  return isoDate(parseLocalDate(value || currentPeriodStart()));
+function normalizePeriodStart(value, fallback = currentPeriodStart()) {
+  if (!value) return fallback;
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) return isoDate(parsed);
+  return fallback;
 }
 
 function parseLocalDate(value) {
