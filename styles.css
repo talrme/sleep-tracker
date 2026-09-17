@@ -580,7 +580,14 @@ label span,
   inset: 8px;
   z-index: 11;
   display: grid;
+}
+
+.settings-modal {
   place-items: end center;
+}
+
+.entry-modal {
+  place-items: center;
 }
 
 .settings-panel,
