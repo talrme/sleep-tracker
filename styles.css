@@ -308,6 +308,13 @@ button.danger,
   line-height: 1.35;
 }
 
+.entry-piece {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18rem;
+  margin: 0 0.55rem 0.18rem 0;
+}
+
 .entry-link {
   display: inline;
   min-height: 0;
@@ -315,18 +322,23 @@ button.danger,
   border-radius: 0;
   background: transparent;
   color: inherit;
-  padding: 0;
+  padding: 0 1px;
   font-weight: 820;
   text-align: left;
-  pointer-events: none;
+  pointer-events: auto;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--card-color) 64%, transparent);
 }
 
 .entry-list.is-editing .entry-link {
   color: var(--accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  pointer-events: auto;
+  text-decoration-color: currentColor;
+}
+
+.entry-link:hover {
+  color: var(--accent);
 }
 
 .entry-separator {

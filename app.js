@@ -190,7 +190,7 @@ function entryListHtml(entries, editing) {
   if (!entries.length) return '<span class="empty-entry">No entries yet</span>';
   return entries.map((entry, index) => {
     const separator = index < entries.length - 1 ? '<span class="entry-separator">;</span>' : '';
-    return '<span class="entry-piece"><button type="button" class="entry-link" data-edit-entry="' + escapeHtml(entry.id) + '"' + (editing ? '' : ' tabindex="-1" aria-hidden="true"') + '>+' + formatDurationClock(entry.minutes) + '</button>' + separator + '</span>';
+    return '<span class="entry-piece"><button type="button" class="entry-link" data-edit-entry="' + escapeHtml(entry.id) + '">+' + formatDurationClock(entry.minutes) + '</button>' + separator + '</span>';
   }).join(" ");
 }
 
@@ -611,7 +611,7 @@ function bindEvents() {
     const editEntry = event.target.closest("[data-edit-entry]");
     if (editEntry) {
       const entry = state.entries.find((item) => item.id === editEntry.dataset.editEntry);
-      if (entry && state.editMode[cardKey(entry.person, entry.periodStart)]) openEntryModal(editEntry.dataset.editEntry);
+      if (entry) openEntryModal(editEntry.dataset.editEntry);
       return;
     }
 
