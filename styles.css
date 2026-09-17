@@ -404,6 +404,7 @@ label {
 }
 
 label span,
+.self-setting > span,
 .theme-setting > span,
 .eyebrow {
   color: var(--muted);
@@ -533,6 +534,63 @@ label span,
 .settings-section h3 {
   margin: 0;
   font-size: 1rem;
+}
+
+.self-setting {
+  display: grid;
+  gap: 7px;
+}
+
+.person-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 78%, var(--bg));
+  overflow: hidden;
+}
+
+.person-toggle::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 78%, #fff), color-mix(in srgb, var(--tal) 58%, var(--sophie)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 52%, transparent);
+  transition: transform 170ms ease;
+}
+
+.person-toggle[data-selected="Sophie"]::before {
+  transform: translateX(100%);
+}
+
+.person-toggle button {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.46;
+  font-size: 1rem;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.person-toggle button:hover {
+  transform: none;
+}
+
+.person-toggle button.is-selected {
+  color: #111525;
+  opacity: 1;
 }
 
 .theme-setting {

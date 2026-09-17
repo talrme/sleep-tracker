@@ -28,7 +28,8 @@ const els = {
   historyList: document.querySelector("[data-history-list]"),
   settingsBackdrop: document.querySelector("[data-settings-backdrop]"),
   settingsModal: document.querySelector("[data-settings-modal]"),
-  self: document.querySelector("[data-setting-self]"),
+  selfToggle: document.querySelector("[data-person-toggle]"),
+  selfButtons: Array.from(document.querySelectorAll("[data-self-option]")),
   themeButtons: Array.from(document.querySelectorAll("[data-theme-option]")),
   compact: document.querySelector("[data-setting-compact]"),
   targetTal: document.querySelector("[data-target-tal]"),
@@ -98,12 +99,21 @@ function renderSelectOptions() {
 }
 
 function renderSettings() {
-  els.self.value = state.settings.self;
+  renderSelfButtons();
   renderThemeButtons();
   els.compact.checked = Boolean(state.settings.compact);
   els.targetTal.value = String(targetFor("Tal"));
   els.targetSophie.value = String(targetFor("Sophie"));
   renderSpreadsheetLink();
+}
+
+function renderSelfButtons() {
+  if (els.selfToggle) els.selfToggle.dataset.selected = state.settings.self;
+  els.selfButtons.forEach((button) => {
+    const selected = button.dataset.selfOption === state.settings.self;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-checked", String(selected));
+  });
 }
 
 function renderThemeButtons() {
@@ -296,7 +306,6 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  state.settings.self = els.self.value;
   state.settings.compact = els.compact.checked;
   state.targets = {
     Tal: Number(els.targetTal.value || DEFAULT_TARGETS.Tal),
@@ -311,6 +320,13 @@ function saveSettings() {
 function setTheme(theme) {
   if (!["night", "moon", "ledger", "sunrise"].includes(theme)) return;
   state.settings.theme = theme;
+  saveState();
+  render();
+}
+
+function setSelf(person) {
+  if (!PEOPLE.includes(person)) return;
+  state.settings.self = person;
   saveState();
   render();
 }
@@ -569,6 +585,12 @@ function bindEvents() {
     const custom = event.target.closest("[data-custom-add]");
     if (custom) {
       customAdd(custom.dataset.customAdd);
+      return;
+    }
+
+    const self = event.target.closest("[data-self-option]");
+    if (self) {
+      setSelf(self.dataset.selfOption);
       return;
     }
 

@@ -56,13 +56,13 @@
 
       <section class="settings-section" aria-label="Device settings">
         <h3>Device</h3>
-        <label>
+        <div class="self-setting">
           <span>Who am I?</span>
-          <select data-setting-self>
-            <option>Tal</option>
-            <option>Sophie</option>
-          </select>
-        </label>
+          <div class="person-toggle" data-person-toggle data-selected="Tal" role="radiogroup" aria-label="Who am I?">
+            <button type="button" data-self-option="Tal" role="radio" aria-checked="true">Tal</button>
+            <button type="button" data-self-option="Sophie" role="radio" aria-checked="false">Sophie</button>
+          </div>
+        </div>
         <div class="theme-setting">
           <span>Style</span>
           <div class="theme-picker" role="group" aria-label="Style">
