@@ -805,6 +805,13 @@ function bindEvents() {
   });
 
   document.addEventListener("change", (event) => {
+    if (event.target === els.compact) {
+      state.settings.compact = els.compact.checked;
+      saveState();
+      render();
+      return;
+    }
+
     const customSelect = event.target.closest("[data-custom-duration]");
     if (customSelect) {
       customAddFromSelect(customSelect);

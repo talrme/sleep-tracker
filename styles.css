@@ -1270,30 +1270,175 @@ label span,
 }
 
 body.compact-mode .app-shell {
-  gap: 6px;
+  width: min(100% - 12px, 440px);
+  gap: 5px;
+  padding-top: 6px;
+}
+
+body.compact-mode .top-bar {
+  min-height: 44px;
+  padding: 7px 10px 5px;
+}
+
+body.compact-mode .title-button {
+  font-size: 1.78rem;
+  padding-bottom: 0;
+  text-shadow: none;
+}
+
+body.compact-mode .title-button::after {
+  bottom: -6px;
+  height: 3px;
+  left: 10px;
+  right: 10px;
+}
+
+body.compact-mode .period-nav {
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  gap: 4px;
+  padding: 4px;
+}
+
+body.compact-mode .period-nav button {
+  min-height: 30px;
+  padding: 0 6px;
+}
+
+body.compact-mode .period-nav strong {
+  font-size: 1rem;
+}
+
+body.compact-mode .period-nav span {
+  display: none;
+}
+
+body.compact-mode .today-grid {
+  gap: 5px;
 }
 
 body.compact-mode .sleep-card {
-  padding: 8px;
+  padding: 7px 8px;
+}
+
+body.compact-mode .sleep-card::before {
+  height: 3px;
+}
+
+body.compact-mode .person-name {
+  margin-bottom: 0;
+  font-size: 0.66rem;
 }
 
 body.compact-mode .card-top h2 {
-  font-size: 2rem;
+  font-size: 1.72rem;
 }
 
 body.compact-mode .goal-badge {
-  width: 48px;
-  min-height: 48px;
+  width: 42px;
+  min-height: 42px;
+  font-size: 0.52rem;
+}
+
+body.compact-mode .goal-badge strong {
+  font-size: 0.72rem;
+}
+
+body.compact-mode .progress-track {
+  height: 6px;
+  margin: 5px 0 3px;
+}
+
+body.compact-mode .entry-row {
+  min-height: 20px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+}
+
+body.compact-mode .edit-icon {
+  width: 24px;
+  min-height: 24px;
+  font-size: 0.82rem;
+}
+
+body.compact-mode .quick-add {
+  margin-top: 5px;
+}
+
+body.compact-mode .quick-add div {
+  gap: 4px;
 }
 
 body.compact-mode .quick-add button {
-  min-height: 30px;
+  min-height: 27px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+}
+
+body.compact-mode .custom-add {
+  margin-top: 4px;
+}
+
+body.compact-mode select {
+  min-height: 31px;
+  padding: 4px 8px;
 }
 
 body.compact-mode .period-nav span,
 body.compact-mode .entry-list,
 body.compact-mode .sleep-status {
-  font-size: 0.74rem;
+  font-size: 0.7rem;
+}
+
+body.compact-mode .sleep-status {
+  margin-bottom: 3px;
+}
+
+body.compact-mode .history-section {
+  margin-top: 6px;
+  gap: 5px;
+}
+
+body.compact-mode .section-heading h2 {
+  font-size: 1rem;
+}
+
+body.compact-mode .history-list {
+  gap: 5px;
+}
+
+body.compact-mode .history-day {
+  padding: 6px;
+}
+
+body.compact-mode .history-day h3 {
+  margin-bottom: 5px;
+  font-size: 0.7rem;
+}
+
+body.compact-mode .mini-card {
+  min-height: 62px;
+  gap: 1px;
+}
+
+body.compact-mode .mini-card strong {
+  font-size: 0.92rem;
+}
+
+body.compact-mode .mini-card span,
+body.compact-mode .mini-card small {
+  font-size: 0.62rem;
+}
+
+body.compact-mode .bottom-action {
+  min-width: 96px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+
+body.compact-mode .bottom-action .tool-emoji {
+  width: 20px;
+  height: 20px;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 390px) {
