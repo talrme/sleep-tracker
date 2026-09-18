@@ -393,7 +393,7 @@ function renderHistoryChart() {
 
   const totals = periods.flatMap((periodStart) => PEOPLE.map((person) => totalFor(person, periodStart)));
   const maxMinutes = Math.max(...totals, ...PEOPLE.map(targetFor), 420);
-  const yMax = Math.max(420, Math.ceil(maxMinutes / 60) * 60);
+  const yMax = Math.max(420, Math.ceil((maxMinutes * 1.08) / 60) * 60);
   const chartHeight = 260;
   const chartTop = 26;
   const chartBottom = 42;
@@ -409,23 +409,49 @@ function renderHistoryChart() {
   const baseline = chartHeight - chartBottom;
   const plotBackground = '<rect class="chart-plot-bg" x="' + chartLeft + '" y="' + chartTop + '" width="' + (chartWidth - chartLeft - chartRight) + '" height="' + plotHeight + '" rx="12"></rect>';
   const grid = ticks.map((minutes) => '<line class="chart-grid" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + yFor(minutes).toFixed(1) + '" y2="' + yFor(minutes).toFixed(1) + '"></line>').join("");
-  const yAxis = '<div class="history-y-axis" style="height:' + chartHeight + 'px">' + ticks.map((minutes) => '<span style="top:' + yFor(minutes).toFixed(1) + 'px">' + escapeHtml(minutes ? formatDurationCompact(minutes) : "0") + '</span>').join("") + '</div>';
+  const yAxis = '<div class="history-y-axis" style="height:' + chartHeight + 'px">' + ticks.map((minutes) => '<span style="top:' + yFor(minutes).toFixed(1) + 'px">' + escapeHtml(formatAxisDuration(minutes)) + '</span>').join("") + '</div>';
+  const targetLines = historyTargetLinesSvg(chartLeft, chartWidth - chartRight, yFor);
   const xLabels = periods.map((periodStart, index) => '<text class="chart-date-label" x="' + xFor(index) + '" y="' + (chartHeight - 12) + '">' + escapeHtml(formatNumericDate(parseLocalDate(periodStart))) + '</text>').join("");
   const personLines = PEOPLE.map((person) => historyLineSvg(person, periods, xFor, yFor, baseline));
 
   els.historyChart.innerHTML =
+    '<div class="history-chart-topline">' +
+      '<span>Hours asleep</span>' +
+      '<div class="history-chart-key" aria-label="Chart legend">' +
+        '<span><i class="key-line tal-key"></i>Tal</span>' +
+        '<span><i class="key-line sophie-key"></i>Sophie</span>' +
+        '<span><i class="key-line target-key"></i>target</span>' +
+        '<span><i class="key-star"></i>met</span>' +
+      '</div>' +
+    '</div>' +
     '<div class="history-chart-frame">' +
       yAxis +
       '<div class="history-scroll" data-history-scroll tabindex="0" aria-label="Scrollable sleep history chart">' +
         '<svg class="history-svg" width="' + chartWidth + '" height="' + chartHeight + '" viewBox="0 0 ' + chartWidth + ' ' + chartHeight + '" role="img" aria-label="Sleep hours over time">' +
           plotBackground +
           grid +
+          targetLines +
           '<line class="chart-axis" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + baseline + '" y2="' + baseline + '"></line>' +
           personLines.join("") +
           xLabels +
         '</svg>' +
       '</div>' +
     '</div>';
+}
+
+function historyTargetLinesSvg(x1, x2, yFor) {
+  const uniqueTargets = Array.from(new Map(PEOPLE.map((person) => [targetFor(person), person])).entries())
+    .sort((a, b) => b[0] - a[0]);
+  return uniqueTargets.map(([target, person]) => {
+    const peopleAtTarget = PEOPLE.filter((candidate) => targetFor(candidate) === target);
+    const label = peopleAtTarget.length === PEOPLE.length ? "target" : person + " target";
+    const className = peopleAtTarget.length === PEOPLE.length ? "shared-target-line" : person.toLowerCase() + "-target-line";
+    const y = yFor(target);
+    return '<g class="target-guide ' + className + '">' +
+      '<line class="target-guide-line" x1="' + x1 + '" x2="' + x2 + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '"></line>' +
+      '<text class="target-guide-label" x="' + (x2 - 8) + '" y="' + Math.max(12, y - 6).toFixed(1) + '">' + escapeHtml(label) + '</text>' +
+    '</g>';
+  }).join("");
 }
 
 function historyLineSvg(person, periods, xFor, yFor, baseline) {
@@ -712,6 +738,13 @@ function formatDurationCompact(minutes) {
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return mins ? hrs + "h " + mins + "m" : hrs + "h";
+}
+
+function formatAxisDuration(minutes) {
+  minutes = Math.max(0, Number(minutes || 0));
+  if (!minutes) return "0";
+  const hours = minutes / 60;
+  return Number.isInteger(hours) ? hours + "h" : hours.toFixed(1).replace(/\.0$/, "") + "h";
 }
 
 function formatDurationClock(minutes) {
