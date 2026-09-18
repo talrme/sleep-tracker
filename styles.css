@@ -162,99 +162,46 @@ button.danger,
   border-color: var(--danger);
 }
 
-.settings-button {
+.bottom-action {
   width: auto;
   min-height: 44px;
   padding: 0 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   margin: 0 auto;
   border-color: color-mix(in srgb, var(--ink) 50%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    color-mix(in srgb, var(--paper) 72%, transparent);
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1;
+  min-width: 112px;
 }
 
-.settings-button span:first-child {
-  font-size: 1.1rem;
+.bottom-action .tool-emoji {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 36%, transparent);
+  font-size: 1.02rem;
+  line-height: 1;
 }
 
-.settings-button:hover {
+.bottom-action:hover {
   color: var(--ink);
   background: color-mix(in srgb, var(--accent) 22%, var(--paper));
   transform: translateY(-1px);
 }
 
-.history-button {
-  width: 44px;
-  min-height: 44px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  border-color: color-mix(in srgb, var(--ink) 50%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 72%, transparent);
-  color: var(--muted);
-}
-
-.history-button:hover {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--accent) 22%, var(--paper));
-}
-
-.line-chart-icon {
-  position: relative;
-  width: 24px;
-  height: 20px;
-  border-left: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  opacity: 0.95;
-}
-
-.line-chart-icon::before,
-.line-chart-icon::after,
-.line-chart-icon i {
-  content: "";
-  position: absolute;
-  display: block;
-}
-
-.line-chart-icon::before {
-  left: 3px;
-  bottom: 5px;
-  width: 16px;
-  height: 9px;
-  border-top: 2px solid currentColor;
-  border-right: 2px solid currentColor;
-  transform: skew(-22deg);
-  transform-origin: bottom left;
-}
-
-.line-chart-icon::after,
-.line-chart-icon i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.line-chart-icon::after {
-  left: 4px;
-  bottom: 4px;
-}
-
-.line-chart-icon i {
-  right: 1px;
-  top: 3px;
-}
-
 .bottom-tools {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   justify-content: center;
   padding: 3px 2px 0;
@@ -679,7 +626,12 @@ label span,
   position: fixed;
   inset: 0;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.58);
+  animation: backdrop-in 160ms ease-out both;
+}
+
+.modal-backdrop.is-closing {
+  animation: backdrop-out 160ms ease-in both;
 }
 
 .settings-modal,
@@ -716,6 +668,19 @@ label span,
 
 .history-panel {
   width: min(100%, 720px);
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--tal) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--sophie) 16%, transparent), transparent 30%),
+    var(--paper);
+  border-color: color-mix(in srgb, var(--ink) 70%, var(--line));
+}
+
+.history-modal:not([hidden]) .history-panel {
+  animation: history-pop-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.history-modal.is-closing .history-panel {
+  animation: history-pop-out 160ms ease-in both;
 }
 
 .settings-panel header,
@@ -737,7 +702,7 @@ label span,
 .history-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 900;
@@ -778,24 +743,26 @@ label span,
 
 .history-chart-frame {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  border: 1px solid var(--line);
+  grid-template-columns: 46px minmax(0, 1fr);
+  border: 1px solid color-mix(in srgb, var(--line) 66%, transparent);
   border-radius: 8px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--bg) 32%, transparent);
+  background: color-mix(in srgb, var(--bg) 18%, var(--paper));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .history-y-axis {
   position: relative;
-  border-right: 1px solid var(--line);
-  background: color-mix(in srgb, var(--paper) 86%, var(--bg));
+  border-right: 1px solid color-mix(in srgb, var(--line) 58%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--paper) 95%, var(--bg)), color-mix(in srgb, var(--paper) 80%, var(--bg)));
 }
 
 .history-y-axis span {
   position: absolute;
-  right: 7px;
+  right: 8px;
   transform: translateY(-50%);
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
   font-size: 0.66rem;
   font-weight: 900;
 }
@@ -805,6 +772,9 @@ label span,
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--paper) 92%, var(--bg)), color-mix(in srgb, var(--paper) 80%, var(--bg)));
+  scrollbar-color: color-mix(in srgb, var(--accent) 48%, var(--line)) transparent;
 }
 
 .history-scroll:focus {
@@ -816,21 +786,38 @@ label span,
   display: block;
 }
 
+.chart-plot-bg {
+  fill: color-mix(in srgb, var(--bg) 20%, transparent);
+}
+
 .chart-grid {
-  stroke: color-mix(in srgb, var(--line) 58%, transparent);
+  stroke: color-mix(in srgb, var(--line) 34%, transparent);
   stroke-width: 1;
 }
 
 .chart-axis {
-  stroke: color-mix(in srgb, var(--ink) 38%, transparent);
+  stroke: color-mix(in srgb, var(--muted) 34%, transparent);
   stroke-width: 1.2;
+}
+
+.history-area {
+  opacity: 0.13;
+}
+
+.tal-area {
+  fill: var(--tal);
+}
+
+.sophie-area {
+  fill: var(--sophie);
 }
 
 .history-line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 3.4;
   stroke-linecap: round;
   stroke-linejoin: round;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.16));
 }
 
 .tal-line {
@@ -843,7 +830,7 @@ label span,
 
 .chart-dot {
   stroke: var(--paper);
-  stroke-width: 2;
+  stroke-width: 2.4;
 }
 
 .tal-dot {
@@ -856,13 +843,14 @@ label span,
 
 .chart-star {
   fill: var(--accent);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 950;
   text-anchor: middle;
+  opacity: 0.86;
 }
 
 .chart-date-label {
-  fill: var(--muted);
+  fill: color-mix(in srgb, var(--muted) 82%, transparent);
   font-size: 11px;
   font-weight: 850;
   text-anchor: middle;
@@ -872,6 +860,38 @@ label span,
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes history-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes history-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
 }
 
 .plain-x {

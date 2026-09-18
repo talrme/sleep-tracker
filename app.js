@@ -6,6 +6,7 @@ const DELETE_MARKER = "__DELETE__";
 const SYNC_INTERVAL_MS = 60000;
 const HISTORY_LOOKBACK_DAYS = 60;
 const RECENT_DAYS_TO_SHOW = 4;
+const MODAL_ANIMATION_MS = 160;
 
 const state = {
   selectedStart: "",
@@ -22,6 +23,8 @@ const state = {
     autoSync: window.SLEEP_TRACKER_CONFIG?.autoSync ?? true
   }
 };
+
+let historyCloseTimer = 0;
 
 const els = {
   periodTitle: document.querySelector("[data-period-title]"),
@@ -352,7 +355,10 @@ function closeSettings() {
 }
 
 function openHistory() {
+  window.clearTimeout(historyCloseTimer);
   renderHistoryChart();
+  els.historyBackdrop.classList.remove("is-closing");
+  els.historyModal.classList.remove("is-closing");
   els.historyBackdrop.hidden = false;
   els.historyModal.hidden = false;
   document.body.classList.add("is-modal-open");
@@ -360,9 +366,17 @@ function openHistory() {
 }
 
 function closeHistory() {
-  els.historyBackdrop.hidden = true;
-  els.historyModal.hidden = true;
-  document.body.classList.remove("is-modal-open");
+  if (els.historyModal.hidden) return;
+  els.historyBackdrop.classList.add("is-closing");
+  els.historyModal.classList.add("is-closing");
+  window.clearTimeout(historyCloseTimer);
+  historyCloseTimer = window.setTimeout(() => {
+    els.historyBackdrop.hidden = true;
+    els.historyModal.hidden = true;
+    els.historyBackdrop.classList.remove("is-closing");
+    els.historyModal.classList.remove("is-closing");
+    document.body.classList.remove("is-modal-open");
+  }, MODAL_ANIMATION_MS);
 }
 
 function scrollHistoryChartToLatest() {
@@ -380,30 +394,33 @@ function renderHistoryChart() {
   const totals = periods.flatMap((periodStart) => PEOPLE.map((person) => totalFor(person, periodStart)));
   const maxMinutes = Math.max(...totals, ...PEOPLE.map(targetFor), 420);
   const yMax = Math.max(420, Math.ceil(maxMinutes / 60) * 60);
-  const chartHeight = 250;
-  const chartTop = 20;
-  const chartBottom = 40;
+  const chartHeight = 260;
+  const chartTop = 26;
+  const chartBottom = 42;
   const chartLeft = 18;
-  const chartRight = 24;
-  const pointGap = 58;
+  const chartRight = 28;
+  const pointGap = 62;
   const plotHeight = chartHeight - chartTop - chartBottom;
   const chartWidth = Math.max(340, chartLeft + chartRight + Math.max(1, periods.length - 1) * pointGap);
   const ticks = [yMax, Math.round(yMax / 2 / 15) * 15, 0];
 
   const yFor = (minutes) => chartTop + plotHeight - (Math.min(minutes, yMax) / yMax) * plotHeight;
   const xFor = (index) => chartLeft + index * pointGap;
+  const baseline = chartHeight - chartBottom;
+  const plotBackground = '<rect class="chart-plot-bg" x="' + chartLeft + '" y="' + chartTop + '" width="' + (chartWidth - chartLeft - chartRight) + '" height="' + plotHeight + '" rx="12"></rect>';
   const grid = ticks.map((minutes) => '<line class="chart-grid" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + yFor(minutes).toFixed(1) + '" y2="' + yFor(minutes).toFixed(1) + '"></line>').join("");
   const yAxis = '<div class="history-y-axis" style="height:' + chartHeight + 'px">' + ticks.map((minutes) => '<span style="top:' + yFor(minutes).toFixed(1) + 'px">' + escapeHtml(minutes ? formatDurationCompact(minutes) : "0") + '</span>').join("") + '</div>';
   const xLabels = periods.map((periodStart, index) => '<text class="chart-date-label" x="' + xFor(index) + '" y="' + (chartHeight - 12) + '">' + escapeHtml(formatNumericDate(parseLocalDate(periodStart))) + '</text>').join("");
-  const personLines = PEOPLE.map((person) => historyLineSvg(person, periods, xFor, yFor));
+  const personLines = PEOPLE.map((person) => historyLineSvg(person, periods, xFor, yFor, baseline));
 
   els.historyChart.innerHTML =
     '<div class="history-chart-frame">' +
       yAxis +
       '<div class="history-scroll" data-history-scroll tabindex="0" aria-label="Scrollable sleep history chart">' +
         '<svg class="history-svg" width="' + chartWidth + '" height="' + chartHeight + '" viewBox="0 0 ' + chartWidth + ' ' + chartHeight + '" role="img" aria-label="Sleep hours over time">' +
+          plotBackground +
           grid +
-          '<line class="chart-axis" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + (chartHeight - chartBottom) + '" y2="' + (chartHeight - chartBottom) + '"></line>' +
+          '<line class="chart-axis" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + baseline + '" y2="' + baseline + '"></line>' +
           personLines.join("") +
           xLabels +
         '</svg>' +
@@ -411,7 +428,7 @@ function renderHistoryChart() {
     '</div>';
 }
 
-function historyLineSvg(person, periods, xFor, yFor) {
+function historyLineSvg(person, periods, xFor, yFor, baseline) {
   const target = targetFor(person);
   const points = periods
     .map((periodStart, index) => ({
@@ -423,7 +440,8 @@ function historyLineSvg(person, periods, xFor, yFor) {
     .filter((point) => point.minutes > 0);
   if (!points.length) return "";
 
-  const path = points.map((point, index) => (index ? "L" : "M") + point.x.toFixed(1) + " " + point.y.toFixed(1)).join(" ");
+  const path = smoothLinePath(points);
+  const area = path + ' L ' + points[points.length - 1].x.toFixed(1) + ' ' + baseline.toFixed(1) + ' L ' + points[0].x.toFixed(1) + ' ' + baseline.toFixed(1) + ' Z';
   const dots = points.map((point) => {
     const met = point.minutes >= target;
     const title = escapeHtml(person + ": " + formatDuration(point.minutes) + " on " + formatShortRange(parseLocalDate(point.periodStart), addDays(parseLocalDate(point.periodStart), 1)));
@@ -434,7 +452,22 @@ function historyLineSvg(person, periods, xFor, yFor) {
     '</g>';
   }).join("");
 
-  return '<path class="history-line ' + person.toLowerCase() + '-line" d="' + path + '"></path>' + dots;
+  return '<path class="history-area ' + person.toLowerCase() + '-area" d="' + area + '"></path><path class="history-line ' + person.toLowerCase() + '-line" d="' + path + '"></path>' + dots;
+}
+
+function smoothLinePath(points) {
+  if (points.length === 1) return "M" + points[0].x.toFixed(1) + " " + points[0].y.toFixed(1);
+  let path = "M" + points[0].x.toFixed(1) + " " + points[0].y.toFixed(1);
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const controlOffset = (current.x - previous.x) * 0.42;
+    path += " C " +
+      (previous.x + controlOffset).toFixed(1) + " " + previous.y.toFixed(1) + ", " +
+      (current.x - controlOffset).toFixed(1) + " " + current.y.toFixed(1) + ", " +
+      current.x.toFixed(1) + " " + current.y.toFixed(1);
+  }
+  return path;
 }
 
 function saveSettings() {
@@ -707,7 +740,13 @@ function bindEvents() {
   const syncNowButton = document.querySelector("[data-sync-now]");
   if (syncNowButton) syncNowButton.addEventListener("click", () => syncNow());
   els.historyBackdrop.addEventListener("click", closeHistory);
+  els.historyModal.addEventListener("click", (event) => {
+    if (event.target === els.historyModal) closeHistory();
+  });
   els.settingsBackdrop.addEventListener("click", closeSettings);
+  els.settingsModal.addEventListener("click", (event) => {
+    if (event.target === els.settingsModal) closeSettings();
+  });
 
   document.querySelector("[data-prev-period]").addEventListener("click", () => {
     state.selectedStart = addDaysString(state.selectedStart, -1);
@@ -723,6 +762,9 @@ function bindEvents() {
   document.querySelector("[data-save-entry]").addEventListener("click", saveEntryModal);
   document.querySelector("[data-delete-entry]").addEventListener("click", deleteCurrentEntry);
   els.entryBackdrop.addEventListener("click", closeEntryModal);
+  els.entryModal.addEventListener("click", (event) => {
+    if (event.target === els.entryModal) closeEntryModal();
+  });
 
   document.addEventListener("change", (event) => {
     const customSelect = event.target.closest("[data-custom-duration]");
