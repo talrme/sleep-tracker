@@ -8,6 +8,8 @@ Phone-first newborn sleep tracker for Tal and Sophie.
 
 - Tracks sleep in 9 PM to 9 PM windows.
 - Shows Tal and Sophie as the main two tiles.
+- Shows target-met stars on daily tiles and in the history graph.
+- Includes a scrollable sleep-history chart with the most recent data visible first.
 - Quick-adds common sleep chunks: 30m, 45m, 1h, 1h 30m, 2h, and 3h.
 - Supports a quieter custom add flow where choosing a duration from `More...` immediately adds it.
 - Lets each phone choose who appears first with the local `Who am I?` setting.

@@ -23,6 +23,7 @@ Live URL: https://talrme.github.io/sleep-tracker/
 - local settings: `self`, `theme`, `compact`, `reduceMotion`, `autoSync`
 - backend-backed settings: `targets.Tal`, `targets.Sophie`
 - spreadsheet link: read from `config.js` or from `snapshot.spreadsheetUrl`
+- history chart: generated client-side from non-deleted entries, omitting zero-hour points and marking target-met points with stars
 
 ## Backend Contract
 

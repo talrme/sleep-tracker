@@ -4,6 +4,8 @@ const DEFAULT_TARGETS = { Tal: 420, Sophie: 420 };
 const QUICK_MINUTES = [30, 45, 60, 90, 120, 180];
 const DELETE_MARKER = "__DELETE__";
 const SYNC_INTERVAL_MS = 60000;
+const HISTORY_LOOKBACK_DAYS = 60;
+const RECENT_DAYS_TO_SHOW = 4;
 
 const state = {
   selectedStart: "",
@@ -37,6 +39,9 @@ const els = {
   spreadsheetLink: document.querySelector("[data-spreadsheet-link]"),
   spreadsheetMissing: document.querySelector("[data-spreadsheet-missing]"),
   syncNote: document.querySelector("[data-sync-note]"),
+  historyBackdrop: document.querySelector("[data-history-backdrop]"),
+  historyModal: document.querySelector("[data-history-modal]"),
+  historyChart: document.querySelector("[data-history-chart]"),
   entryBackdrop: document.querySelector("[data-entry-backdrop]"),
   entryModal: document.querySelector("[data-entry-modal]"),
   entryMinutes: document.querySelector("[data-entry-minutes]")
@@ -82,6 +87,7 @@ function render() {
   renderPeriod();
   renderCards();
   renderHistory();
+  if (els.historyModal && !els.historyModal.hidden) renderHistoryChart();
 }
 
 function renderSelectOptions() {
@@ -157,7 +163,11 @@ function renderCards() {
 }
 
 function renderHistory() {
-  const starts = [-1, -2, -3, -4].map((offset) => addDaysString(state.selectedStart, offset));
+  const starts = recentNonEmptyPeriodStarts();
+  if (!starts.length) {
+    els.historyList.innerHTML = '<p class="empty-history">No recent sleep entries yet</p>';
+    return;
+  }
   els.historyList.innerHTML = starts.map((periodStart) => {
     const start = parseLocalDate(periodStart);
     const end = addDays(start, 1);
@@ -171,14 +181,15 @@ function personCard(person, periodStart) {
   const target = targetFor(person);
   const remaining = Math.max(0, target - total);
   const percent = target ? Math.min(100, Math.round((total / target) * 100)) : 100;
+  const targetMet = total > 0 && total >= target;
   const editing = Boolean(state.editMode[cardKey(person, periodStart)]);
   const toneClass = person === "Tal" ? "tal-card" : "sophie-card";
   const entryHtml = entryListHtml(entries, editing);
   const quickHtml = QUICK_MINUTES.map((minutes) => '<button type="button" data-quick-add="' + person + '" data-minutes="' + minutes + '">' + formatDurationCompact(minutes) + '</button>').join("");
   const editLabel = editing ? "Done Editing" : "Edit entries";
 
-  return '<article class="sleep-card ' + toneClass + '" style="--progress:' + percent + '%">' +
-    '<div class="card-top"><div><p class="person-name">' + escapeHtml(person) + '</p><h2>' + formatDuration(total) + '</h2></div><div class="goal-badge"><strong>' + percent + '%</strong><span>of ' + formatDurationCompact(target) + '</span></div></div>' +
+  return '<article class="sleep-card ' + toneClass + (targetMet ? ' target-met' : '') + '" style="--progress:' + percent + '%">' +
+    '<div class="card-top"><div><p class="person-name">' + escapeHtml(person) + (targetMet ? '<span class="target-star" aria-label="Target met" title="Target met">★</span>' : '') + '</p><h2>' + formatDuration(total) + '</h2></div><div class="goal-badge"><strong>' + percent + '%</strong><span>of ' + formatDurationCompact(target) + '</span></div></div>' +
     '<div class="progress-track" aria-label="' + escapeHtml(person) + ' sleep progress"><span></span></div>' +
     '<div class="sleep-status"><span></span><strong>' + (remaining ? formatDuration(remaining) + ' to go' : 'done') + '</strong></div>' +
     '<div class="entry-row ' + (editing ? 'is-editing' : '') + '"><div class="entry-list ' + (editing ? 'is-editing' : '') + '">' + entryHtml + '</div><button type="button" class="' + (editing ? 'done-editing-button' : 'edit-icon') + '" data-toggle-edit="' + person + '" aria-label="' + editLabel + ' for ' + escapeHtml(person) + '">' + (editing ? editLabel : '✎') + '</button></div>' +
@@ -210,7 +221,9 @@ function miniCard(person, periodStart) {
   const total = totalFor(person, periodStart);
   const target = targetFor(person);
   const percent = target ? Math.min(100, Math.round((total / target) * 100)) : 100;
-  return '<button type="button" class="mini-card ' + (person === "Tal" ? "tal-card" : "sophie-card") + '" data-jump-period="' + periodStart + '"><span>' + escapeHtml(person) + '</span><strong>' + formatDuration(total) + '</strong><small>' + percent + '% of target</small></button>';
+  const targetMet = total > 0 && total >= target;
+  const empty = total <= 0;
+  return '<button type="button" class="mini-card ' + (person === "Tal" ? "tal-card" : "sophie-card") + (targetMet ? ' target-met' : '') + (empty ? ' is-empty' : '') + '" data-jump-period="' + periodStart + '" style="--mini-progress:' + percent + '%"><span>' + escapeHtml(person) + (targetMet ? '<i class="mini-star" aria-hidden="true">★</i>' : '') + '</span><strong>' + formatDuration(total) + '</strong><small>' + (empty ? 'no entry' : percent + '% of target') + '</small></button>';
 }
 
 function visibleEntries(person, periodStart) {
@@ -221,6 +234,28 @@ function visibleEntries(person, periodStart) {
 
 function totalFor(person, periodStart) {
   return visibleEntries(person, periodStart).reduce((sum, entry) => sum + Number(entry.minutes || 0), 0);
+}
+
+function hasAnySleep(periodStart) {
+  return PEOPLE.some((person) => totalFor(person, periodStart) > 0);
+}
+
+function recentNonEmptyPeriodStarts() {
+  const starts = [];
+  for (let offset = -1; offset >= -HISTORY_LOOKBACK_DAYS && starts.length < RECENT_DAYS_TO_SHOW; offset -= 1) {
+    const periodStart = addDaysString(state.selectedStart, offset);
+    if (hasAnySleep(periodStart)) starts.push(periodStart);
+  }
+  return starts;
+}
+
+function chartPeriodStarts() {
+  const fromEntries = state.entries
+    .filter((entry) => !entry.deletedAt && entry.note !== DELETE_MARKER && Number(entry.minutes || 0) > 0)
+    .map((entry) => entry.periodStart);
+  return Array.from(new Set(fromEntries))
+    .filter((periodStart) => PEOPLE.some((person) => totalFor(person, periodStart) > 0))
+    .sort();
 }
 
 function targetFor(person) {
@@ -314,6 +349,92 @@ function closeSettings() {
   els.settingsBackdrop.hidden = true;
   els.settingsModal.hidden = true;
   document.body.classList.remove("is-modal-open");
+}
+
+function openHistory() {
+  renderHistoryChart();
+  els.historyBackdrop.hidden = false;
+  els.historyModal.hidden = false;
+  document.body.classList.add("is-modal-open");
+  window.requestAnimationFrame(() => scrollHistoryChartToLatest());
+}
+
+function closeHistory() {
+  els.historyBackdrop.hidden = true;
+  els.historyModal.hidden = true;
+  document.body.classList.remove("is-modal-open");
+}
+
+function scrollHistoryChartToLatest() {
+  const scroller = els.historyChart.querySelector("[data-history-scroll]");
+  if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+}
+
+function renderHistoryChart() {
+  const periods = chartPeriodStarts();
+  if (!periods.length) {
+    els.historyChart.innerHTML = '<p class="empty-history chart-empty">No sleep entries to graph yet</p>';
+    return;
+  }
+
+  const totals = periods.flatMap((periodStart) => PEOPLE.map((person) => totalFor(person, periodStart)));
+  const maxMinutes = Math.max(...totals, ...PEOPLE.map(targetFor), 420);
+  const yMax = Math.max(420, Math.ceil(maxMinutes / 60) * 60);
+  const chartHeight = 250;
+  const chartTop = 20;
+  const chartBottom = 40;
+  const chartLeft = 18;
+  const chartRight = 24;
+  const pointGap = 58;
+  const plotHeight = chartHeight - chartTop - chartBottom;
+  const chartWidth = Math.max(340, chartLeft + chartRight + Math.max(1, periods.length - 1) * pointGap);
+  const ticks = [yMax, Math.round(yMax / 2 / 15) * 15, 0];
+
+  const yFor = (minutes) => chartTop + plotHeight - (Math.min(minutes, yMax) / yMax) * plotHeight;
+  const xFor = (index) => chartLeft + index * pointGap;
+  const grid = ticks.map((minutes) => '<line class="chart-grid" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + yFor(minutes).toFixed(1) + '" y2="' + yFor(minutes).toFixed(1) + '"></line>').join("");
+  const yAxis = '<div class="history-y-axis" style="height:' + chartHeight + 'px">' + ticks.map((minutes) => '<span style="top:' + yFor(minutes).toFixed(1) + 'px">' + escapeHtml(minutes ? formatDurationCompact(minutes) : "0") + '</span>').join("") + '</div>';
+  const xLabels = periods.map((periodStart, index) => '<text class="chart-date-label" x="' + xFor(index) + '" y="' + (chartHeight - 12) + '">' + escapeHtml(formatNumericDate(parseLocalDate(periodStart))) + '</text>').join("");
+  const personLines = PEOPLE.map((person) => historyLineSvg(person, periods, xFor, yFor));
+
+  els.historyChart.innerHTML =
+    '<div class="history-chart-frame">' +
+      yAxis +
+      '<div class="history-scroll" data-history-scroll tabindex="0" aria-label="Scrollable sleep history chart">' +
+        '<svg class="history-svg" width="' + chartWidth + '" height="' + chartHeight + '" viewBox="0 0 ' + chartWidth + ' ' + chartHeight + '" role="img" aria-label="Sleep hours over time">' +
+          grid +
+          '<line class="chart-axis" x1="' + chartLeft + '" x2="' + (chartWidth - chartRight) + '" y1="' + (chartHeight - chartBottom) + '" y2="' + (chartHeight - chartBottom) + '"></line>' +
+          personLines.join("") +
+          xLabels +
+        '</svg>' +
+      '</div>' +
+    '</div>';
+}
+
+function historyLineSvg(person, periods, xFor, yFor) {
+  const target = targetFor(person);
+  const points = periods
+    .map((periodStart, index) => ({
+      periodStart,
+      x: xFor(index),
+      y: yFor(totalFor(person, periodStart)),
+      minutes: totalFor(person, periodStart)
+    }))
+    .filter((point) => point.minutes > 0);
+  if (!points.length) return "";
+
+  const path = points.map((point, index) => (index ? "L" : "M") + point.x.toFixed(1) + " " + point.y.toFixed(1)).join(" ");
+  const dots = points.map((point) => {
+    const met = point.minutes >= target;
+    const title = escapeHtml(person + ": " + formatDuration(point.minutes) + " on " + formatShortRange(parseLocalDate(point.periodStart), addDays(parseLocalDate(point.periodStart), 1)));
+    return '<g class="chart-point ' + (met ? 'target-met' : '') + '">' +
+      '<title>' + title + '</title>' +
+      (met ? '<text class="chart-star" x="' + point.x.toFixed(1) + '" y="' + Math.max(12, point.y - 9).toFixed(1) + '">★</text>' : '') +
+      '<circle class="chart-dot ' + person.toLowerCase() + '-dot" cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="4.2"></circle>' +
+    '</g>';
+  }).join("");
+
+  return '<path class="history-line ' + person.toLowerCase() + '-line" d="' + path + '"></path>' + dots;
 }
 
 function saveSettings() {
@@ -545,7 +666,7 @@ function formatDuration(minutes) {
   minutes = Math.max(0, Number(minutes || 0));
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  if (!hrs && !mins) return "0h";
+  if (!hrs && !mins) return "--";
   if (!mins) return hrs + "h";
   if (!hrs) return mins + "m";
   return hrs + "h " + String(mins).padStart(2, "0") + "m";
@@ -553,6 +674,7 @@ function formatDuration(minutes) {
 
 function formatDurationCompact(minutes) {
   minutes = Math.max(0, Number(minutes || 0));
+  if (!minutes) return "--";
   if (minutes < 60) return minutes + "m";
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -575,6 +697,8 @@ function escapeHtml(value) {
 }
 
 function bindEvents() {
+  document.querySelector("[data-open-history]").addEventListener("click", openHistory);
+  document.querySelector("[data-close-history]").addEventListener("click", closeHistory);
   document.querySelector("[data-open-settings]").addEventListener("click", openSettings);
   document.querySelector("[data-close-settings]").addEventListener("click", closeSettings);
   document.querySelector("[data-save-settings]").addEventListener("click", saveSettings);
@@ -582,6 +706,7 @@ function bindEvents() {
   if (resetLocalButton) resetLocalButton.addEventListener("click", resetLocal);
   const syncNowButton = document.querySelector("[data-sync-now]");
   if (syncNowButton) syncNowButton.addEventListener("click", () => syncNow());
+  els.historyBackdrop.addEventListener("click", closeHistory);
   els.settingsBackdrop.addEventListener("click", closeSettings);
 
   document.querySelector("[data-prev-period]").addEventListener("click", () => {
