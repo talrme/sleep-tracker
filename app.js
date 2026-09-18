@@ -763,6 +763,11 @@ function escapeHtml(value) {
 }
 
 function bindEvents() {
+  document.querySelector("[data-go-today]").addEventListener("click", () => {
+    state.selectedStart = currentPeriodStart();
+    window.scrollTo({ top: 0, behavior: state.settings.reduceMotion ? "auto" : "smooth" });
+    render();
+  });
   document.querySelector("[data-open-history]").addEventListener("click", openHistory);
   document.querySelector("[data-close-history]").addEventListener("click", closeHistory);
   document.querySelector("[data-open-settings]").addEventListener("click", openSettings);
