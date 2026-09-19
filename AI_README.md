@@ -12,6 +12,7 @@ Live URL: https://talrme.github.io/sleep-tracker/
 - Root `config.js`: shared Apps Script URL and default sync preference.
 - `backend.sample.gs`: Google Apps Script JSONP backend for a Sheet-bound deployment.
 - `README.md`: user setup and backend update instructions.
+- Auto sync is frontend-only: sync on page open, foreground return, and for a two-minute catch-up window after opening or saving. During the window it checks every 15 seconds, then stops.
 
 ## App Model
 

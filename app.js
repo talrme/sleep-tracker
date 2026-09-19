@@ -3,7 +3,8 @@ const PEOPLE = ["Tal", "Sophie"];
 const DEFAULT_TARGETS = { Tal: 420, Sophie: 420 };
 const QUICK_MINUTES = [30, 45, 60, 90, 120, 180];
 const DELETE_MARKER = "__DELETE__";
-const SYNC_INTERVAL_MS = 60000;
+const SYNC_INTERVAL_MS = 15000;
+const SYNC_BURST_DURATION_MS = 2 * 60 * 1000;
 const HISTORY_LOOKBACK_DAYS = 60;
 const RECENT_DAYS_TO_SHOW = 4;
 const MODAL_ANIMATION_MS = 160;
@@ -25,6 +26,10 @@ const state = {
 };
 
 let historyCloseTimer = 0;
+let syncTimer = 0;
+let syncInFlight = false;
+let syncBurstEndsAt = 0;
+let lastSyncStartedAt = 0;
 
 const els = {
   periodTitle: document.querySelector("[data-period-title]"),
@@ -533,15 +538,14 @@ async function syncNow(options = {}) {
     if (!options.quiet) setSyncNote("Backend URL needed in config.js");
     return;
   }
+  if (syncInFlight) return;
+  syncInFlight = true;
+  lastSyncStartedAt = Date.now();
   if (!options.quiet) setSyncNote("Syncing...");
   try {
     const response = await backendRequest("snapshot");
     if (response?.ok && Array.isArray(response.entries)) {
-      mergeEntries(response.entries);
-      if (response.targets) state.targets = { ...state.targets, ...normalizeTargets(response.targets) };
-      if (response.spreadsheetUrl) state.spreadsheetUrl = response.spreadsheetUrl;
-      saveState();
-      render();
+      applySnapshot(response);
       if (!options.quiet) setSyncNote("Synced");
     } else if (!options.quiet) {
       setSyncNote("Sync issue");
@@ -549,6 +553,8 @@ async function syncNow(options = {}) {
   } catch (error) {
     console.warn(error);
     if (!options.quiet) setSyncNote("Offline");
+  } finally {
+    syncInFlight = false;
   }
 }
 
@@ -556,6 +562,7 @@ function syncEntry(entry) {
   if (!configuredBackendUrl()) return;
   backendRequest("upsertEntry", { entry }).then((response) => {
     setSyncNote(response?.ok ? "Synced" : "Sync issue");
+    if (response?.ok) triggerAutoSync({ quiet: true });
   }).catch((error) => {
     console.warn(error);
     setSyncNote("Saved locally");
@@ -566,6 +573,7 @@ function syncDelete(entry) {
   if (!configuredBackendUrl()) return;
   backendRequest("deleteEntry", { id: entry.id, deletedAt: entry.deletedAt }).then((response) => {
     setSyncNote(response?.ok ? "Synced" : "Sync issue");
+    if (response?.ok) triggerAutoSync({ quiet: true });
   }).catch((error) => {
     console.warn(error);
     setSyncNote("Saved locally");
@@ -583,6 +591,7 @@ function syncTargets() {
       saveState();
       renderSettings();
       setSyncNote("Targets synced");
+      triggerAutoSync({ quiet: true });
     } else {
       setSyncNote("Targets need backend update");
     }
@@ -590,6 +599,14 @@ function syncTargets() {
     console.warn(error);
     setSyncNote("Targets saved here");
   });
+}
+
+function applySnapshot(response) {
+  mergeEntries(response.entries || []);
+  if (response.targets) state.targets = { ...state.targets, ...normalizeTargets(response.targets) };
+  if (response.spreadsheetUrl) state.spreadsheetUrl = response.spreadsheetUrl;
+  saveState();
+  render();
 }
 
 function backendRequest(action, payload = {}) {
@@ -667,6 +684,45 @@ function normalizeTargets(targets) {
 
 function setSyncNote(message) {
   if (els.syncNote) els.syncNote.textContent = message;
+}
+
+function triggerAutoSync(options = {}) {
+  if (!state.settings.autoSync) {
+    setSyncNote(configuredBackendUrl() ? "Ready to sync" : "Backend URL needed in config.js");
+    return;
+  }
+  syncNow(options);
+  startAutoSync();
+}
+
+function startAutoSync() {
+  window.clearInterval(syncTimer);
+  if (!state.settings.autoSync || !configuredBackendUrl()) return;
+  syncBurstEndsAt = Date.now() + SYNC_BURST_DURATION_MS;
+  syncTimer = window.setInterval(() => {
+    if (Date.now() >= syncBurstEndsAt) {
+      stopAutoSync();
+      setSyncNote("Ready to sync");
+      return;
+    }
+    syncNow({ quiet: true });
+  }, SYNC_INTERVAL_MS);
+}
+
+function stopAutoSync() {
+  window.clearInterval(syncTimer);
+  syncTimer = 0;
+  syncBurstEndsAt = 0;
+}
+
+function syncAfterReturn() {
+  if (!state.settings.autoSync) return;
+  const justSynced = Date.now() - lastSyncStartedAt < 5000;
+  if (justSynced) {
+    startAutoSync();
+    return;
+  }
+  triggerAutoSync({ quiet: true });
 }
 
 function currentPeriodStart() {
@@ -776,7 +832,7 @@ function bindEvents() {
   const resetLocalButton = document.querySelector("[data-reset-local]");
   if (resetLocalButton) resetLocalButton.addEventListener("click", resetLocal);
   const syncNowButton = document.querySelector("[data-sync-now]");
-  if (syncNowButton) syncNowButton.addEventListener("click", () => syncNow());
+  if (syncNowButton) syncNowButton.addEventListener("click", () => triggerAutoSync());
   els.historyBackdrop.addEventListener("click", closeHistory);
   els.historyModal.addEventListener("click", (event) => {
     if (event.target === els.historyModal) closeHistory();
@@ -867,7 +923,11 @@ function bindEvents() {
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && state.settings.autoSync) syncNow({ quiet: true });
+    if (!document.hidden) syncAfterReturn();
+  });
+  window.addEventListener("focus", syncAfterReturn);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) syncAfterReturn();
   });
 }
 
@@ -877,8 +937,7 @@ function init() {
   render();
   setSyncNote(configuredBackendUrl() ? "Ready to sync" : "Backend URL needed in config.js");
   if (state.settings.autoSync) {
-    syncNow({ quiet: true });
-    window.setInterval(() => syncNow({ quiet: true }), SYNC_INTERVAL_MS);
+    triggerAutoSync({ quiet: true });
   }
 }
 

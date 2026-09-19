@@ -29,7 +29,7 @@ window.SLEEP_TRACKER_CONFIG = {
 };
 ```
 
-Entries write to the backend immediately. Other phones pick up changes when the page opens, when it returns to the foreground, or during the quiet background sync about once per minute.
+Entries write to the backend immediately. Other phones pick up changes when the page opens, when it returns to the foreground, or during a short catch-up window after opening or saving. During that window the page checks about every 15 seconds for two minutes, then stops.
 
 Local-only settings:
 
