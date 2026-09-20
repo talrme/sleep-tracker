@@ -9,8 +9,8 @@
   <link rel="icon" href="images/sleep-tracker-icon.png" type="image/png">
   <link rel="shortcut icon" href="images/sleep-tracker-icon.png" type="image/png">
   <link rel="apple-touch-icon" href="images/sleep-tracker-icon.png">
-  <link rel="manifest" href="manifest.webmanifest?v=20260918-sync-burst">
-  <link rel="stylesheet" href="styles.css?v=20260918-sync-burst">
+  <link rel="manifest" href="manifest.webmanifest?v=20260919-today-pill">
+  <link rel="stylesheet" href="styles.css?v=20260919-today-pill">
 </head>
 <body>
   <main class="app-shell">
@@ -21,7 +21,10 @@
     <section class="period-nav" aria-label="Sleep day controls">
       <button type="button" data-prev-period aria-label="Previous sleep day">‹</button>
       <div>
-        <strong data-period-title>9/17 to 9/18</strong>
+        <div class="period-title-line">
+          <strong data-period-title>9/17 to 9/18</strong>
+          <span class="today-pill" data-today-pill hidden>Today</span>
+        </div>
         <span data-period-range>Thu 9/17 9 PM to Fri 9/18 9 PM</span>
       </div>
       <button type="button" data-next-period aria-label="Next sleep day">›</button>
@@ -165,7 +168,7 @@
     </div>
   </section>
 
-  <script src="config.js?v=20260918-sync-burst"></script>
-  <script src="app.js?v=20260918-sync-burst"></script>
+  <script src="config.js?v=20260919-today-pill"></script>
+  <script src="app.js?v=20260919-today-pill"></script>
 </body>
 </html>

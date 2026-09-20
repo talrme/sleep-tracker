@@ -34,6 +34,7 @@ let lastSyncStartedAt = 0;
 const els = {
   periodTitle: document.querySelector("[data-period-title]"),
   periodRange: document.querySelector("[data-period-range]"),
+  todayPill: document.querySelector("[data-today-pill]"),
   todayGrid: document.querySelector("[data-today-grid]"),
   historyList: document.querySelector("[data-history-list]"),
   settingsBackdrop: document.querySelector("[data-settings-backdrop]"),
@@ -164,6 +165,7 @@ function renderPeriod() {
   const end = addDays(start, 1);
   els.periodTitle.textContent = formatShortRange(start, end);
   els.periodRange.textContent = formatLongRange(start, end);
+  if (els.todayPill) els.todayPill.hidden = state.selectedStart !== currentPeriodStart();
 }
 
 function renderCards() {
