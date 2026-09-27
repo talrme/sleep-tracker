@@ -1,7 +1,7 @@
 const STORAGE_KEY = "newborn-sleep-tracker-v1";
 const PEOPLE = ["Tal", "Sophie"];
 const DEFAULT_TARGETS = { Tal: 420, Sophie: 420 };
-const QUICK_MINUTES = [30, 45, 60, 90, 120, 180];
+const QUICK_MINUTES = [15, 30, 45, 60, 90, 120, 180];
 const DELETE_MARKER = "__DELETE__";
 const SYNC_INTERVAL_MS = 15000;
 const SYNC_BURST_DURATION_MS = 2 * 60 * 1000;
@@ -12,6 +12,8 @@ const MODAL_ANIMATION_MS = 160;
 const state = {
   selectedStart: "",
   editingEntryId: "",
+  addingFor: "",
+  customMinutes: 15,
   entries: [],
   targets: { ...DEFAULT_TARGETS },
   spreadsheetUrl: window.SLEEP_TRACKER_CONFIG?.spreadsheetUrl || "",
@@ -26,14 +28,18 @@ const state = {
 };
 
 let historyCloseTimer = 0;
+let durationCloseTimer = 0;
 let syncTimer = 0;
 let syncInFlight = false;
 let syncBurstEndsAt = 0;
 let lastSyncStartedAt = 0;
+let durationTrigger = null;
+const targetMetState = new Map();
 
 const els = {
   periodTitle: document.querySelector("[data-period-title]"),
   periodRange: document.querySelector("[data-period-range]"),
+  periodNav: document.querySelector(".period-nav"),
   todayPill: document.querySelector("[data-today-pill]"),
   todayGrid: document.querySelector("[data-today-grid]"),
   historyList: document.querySelector("[data-history-list]"),
@@ -53,7 +59,15 @@ const els = {
   historyChart: document.querySelector("[data-history-chart]"),
   entryBackdrop: document.querySelector("[data-entry-backdrop]"),
   entryModal: document.querySelector("[data-entry-modal]"),
-  entryMinutes: document.querySelector("[data-entry-minutes]")
+  entryMinutes: document.querySelector("[data-entry-minutes]"),
+  durationBackdrop: document.querySelector("[data-duration-backdrop]"),
+  durationModal: document.querySelector("[data-duration-modal]"),
+  durationPerson: document.querySelector("[data-duration-person]"),
+  durationValue: document.querySelector("[data-duration-value]"),
+  durationRange: document.querySelector("[data-duration-range]"),
+  durationAdd: document.querySelector("[data-add-duration]"),
+  confettiStage: document.querySelector("[data-confetti-stage]"),
+  goalAnnouncer: document.querySelector("[data-goal-announcer]")
 };
 
 function loadState() {
@@ -165,11 +179,23 @@ function renderPeriod() {
   const end = addDays(start, 1);
   els.periodTitle.textContent = formatShortRange(start, end);
   els.periodRange.textContent = formatLongRange(start, end);
-  if (els.todayPill) els.todayPill.hidden = state.selectedStart !== currentPeriodStart();
+  const isToday = state.selectedStart === currentPeriodStart();
+  if (els.todayPill) els.todayPill.hidden = !isToday;
+  if (els.periodNav) els.periodNav.classList.toggle("is-today", isToday);
 }
 
 function renderCards() {
+  const celebrations = [];
+  orderedPeople().forEach((person) => {
+    const key = cardKey(person, state.selectedStart);
+    const met = isTargetMet(person, state.selectedStart);
+    if (targetMetState.get(key) === false && met) celebrations.push(person);
+    targetMetState.set(key, met);
+  });
   els.todayGrid.innerHTML = orderedPeople().map((person) => personCard(person, state.selectedStart)).join("");
+  celebrations.forEach((person, index) => {
+    window.setTimeout(() => launchTargetConfetti(person), index * 180);
+  });
 }
 
 function renderHistory() {
@@ -196,6 +222,7 @@ function personCard(person, periodStart) {
   const toneClass = person === "Tal" ? "tal-card" : "sophie-card";
   const entryHtml = entryListHtml(entries, editing);
   const quickHtml = QUICK_MINUTES.map((minutes) => '<button type="button" data-quick-add="' + person + '" data-minutes="' + minutes + '">' + formatDurationCompact(minutes) + '</button>').join("");
+  const moreButton = '<button type="button" class="more-duration-button" data-open-duration="' + person + '" aria-label="More sleep durations for ' + escapeHtml(person) + '">More<span aria-hidden="true">…</span></button>';
   const editLabel = editing ? "Done Editing" : "Edit entries";
 
   return '<article class="sleep-card ' + toneClass + (targetMet ? ' target-met' : '') + '" style="--progress:' + percent + '%">' +
@@ -203,8 +230,7 @@ function personCard(person, periodStart) {
     '<div class="progress-track" aria-label="' + escapeHtml(person) + ' sleep progress"><span></span></div>' +
     '<div class="sleep-status"><span></span><strong>' + (remaining ? formatDuration(remaining) + ' to go' : 'done') + '</strong></div>' +
     '<div class="entry-row ' + (editing ? 'is-editing' : '') + '"><div class="entry-list ' + (editing ? 'is-editing' : '') + '">' + entryHtml + '</div><button type="button" class="' + (editing ? 'done-editing-button' : 'edit-icon') + '" data-toggle-edit="' + person + '" aria-label="' + editLabel + ' for ' + escapeHtml(person) + '">' + (editing ? editLabel : '✎') + '</button></div>' +
-    '<div class="quick-add"><div>' + quickHtml + '</div></div>' +
-    '<div class="custom-add"><select data-custom-duration="' + person + '" aria-label="Add custom sleep duration for ' + escapeHtml(person) + '"><option value="">More...</option>' + durationOptionsHtml(15, 9 * 60) + '</select></div>' +
+    '<div class="quick-add"><div>' + quickHtml + moreButton + '</div></div>' +
   '</article>';
 }
 
@@ -246,6 +272,11 @@ function totalFor(person, periodStart) {
   return visibleEntries(person, periodStart).reduce((sum, entry) => sum + Number(entry.minutes || 0), 0);
 }
 
+function isTargetMet(person, periodStart) {
+  const total = totalFor(person, periodStart);
+  return total > 0 && total >= targetFor(person);
+}
+
 function hasAnySleep(periodStart) {
   return PEOPLE.some((person) => totalFor(person, periodStart) > 0);
 }
@@ -284,11 +315,6 @@ function quickAdd(person, minutes) {
   addEntry(person, Number(minutes));
 }
 
-function customAddFromSelect(select) {
-  if (!select?.value) return;
-  addEntry(select.dataset.customDuration, Number(select.value));
-}
-
 function addEntry(person, minutes) {
   const now = new Date().toISOString();
   const entry = {
@@ -303,6 +329,63 @@ function addEntry(person, minutes) {
   saveState();
   render();
   syncEntry(entry);
+}
+
+function openDurationModal(person, trigger) {
+  if (!PEOPLE.includes(person)) return;
+  window.clearTimeout(durationCloseTimer);
+  durationTrigger = trigger || document.activeElement;
+  state.addingFor = person;
+  state.customMinutes = 15;
+  updateDurationPicker();
+  els.durationBackdrop.classList.remove("is-closing");
+  els.durationModal.classList.remove("is-closing");
+  els.durationBackdrop.hidden = false;
+  els.durationModal.hidden = false;
+  document.body.classList.add("is-modal-open");
+  window.requestAnimationFrame(() => document.querySelector("[data-close-duration]")?.focus());
+}
+
+function closeDurationModal() {
+  if (els.durationModal.hidden) return;
+  els.durationBackdrop.classList.add("is-closing");
+  els.durationModal.classList.add("is-closing");
+  window.clearTimeout(durationCloseTimer);
+  durationCloseTimer = window.setTimeout(() => {
+    els.durationBackdrop.hidden = true;
+    els.durationModal.hidden = true;
+    els.durationBackdrop.classList.remove("is-closing");
+    els.durationModal.classList.remove("is-closing");
+    state.addingFor = "";
+    document.body.classList.remove("is-modal-open");
+    durationTrigger?.focus();
+    durationTrigger = null;
+  }, MODAL_ANIMATION_MS);
+}
+
+function setCustomMinutes(minutes) {
+  state.customMinutes = Math.max(15, Math.min(540, Math.round(Number(minutes || 15) / 15) * 15));
+  updateDurationPicker();
+}
+
+function updateDurationPicker() {
+  const person = state.addingFor || "Tal";
+  const minutes = state.customMinutes || 15;
+  els.durationPerson.textContent = "For " + person;
+  els.durationValue.textContent = formatDuration(minutes);
+  els.durationRange.value = String(minutes);
+  els.durationAdd.textContent = "Add " + formatDurationCompact(minutes) + " for " + person;
+  document.querySelectorAll("[data-duration-preset]").forEach((button) => {
+    button.classList.toggle("is-selected", Number(button.dataset.durationPreset) === minutes);
+  });
+}
+
+function addCustomDuration() {
+  const person = state.addingFor;
+  const minutes = state.customMinutes;
+  if (!PEOPLE.includes(person) || !minutes) return;
+  closeDurationModal();
+  addEntry(person, minutes);
 }
 
 function openEntryModal(entryId) {
@@ -405,7 +488,7 @@ function renderHistoryChart() {
   const chartTop = 26;
   const chartBottom = 42;
   const chartLeft = 18;
-  const chartRight = 28;
+  const chartRight = 84;
   const pointGap = 62;
   const plotHeight = chartHeight - chartTop - chartBottom;
   const chartWidth = Math.max(340, chartLeft + chartRight + Math.max(1, periods.length - 1) * pointGap);
@@ -425,8 +508,6 @@ function renderHistoryChart() {
     '<div class="history-chart-topline">' +
       '<span>Hours asleep</span>' +
       '<div class="history-chart-key" aria-label="Chart legend">' +
-        '<span><i class="key-line tal-key"></i>Tal</span>' +
-        '<span><i class="key-line sophie-key"></i>Sophie</span>' +
         '<span><i class="key-line target-key"></i>target</span>' +
         '<span><i class="key-star"></i>met</span>' +
       '</div>' +
@@ -485,7 +566,17 @@ function historyLineSvg(person, periods, xFor, yFor, baseline) {
     '</g>';
   }).join("");
 
-  return '<path class="history-area ' + person.toLowerCase() + '-area" d="' + area + '"></path><path class="history-line ' + person.toLowerCase() + '-line" d="' + path + '"></path>' + dots;
+  const lastPoint = points[points.length - 1];
+  const labelWidth = person === "Sophie" ? 58 : 40;
+  const labelX = lastPoint.x + 13;
+  const labelY = Math.max(18, Math.min(baseline - 10, lastPoint.y + (person === "Tal" ? -14 : 14)));
+  const lineLabel = '<g class="chart-series-label ' + person.toLowerCase() + '-series-label">' +
+    '<line x1="' + (lastPoint.x + 4).toFixed(1) + '" y1="' + lastPoint.y.toFixed(1) + '" x2="' + labelX.toFixed(1) + '" y2="' + labelY.toFixed(1) + '"></line>' +
+    '<rect x="' + labelX.toFixed(1) + '" y="' + (labelY - 10).toFixed(1) + '" width="' + labelWidth + '" height="20" rx="10"></rect>' +
+    '<text x="' + (labelX + labelWidth / 2).toFixed(1) + '" y="' + (labelY + 3.5).toFixed(1) + '">' + escapeHtml(person) + '</text>' +
+  '</g>';
+
+  return '<path class="history-area ' + person.toLowerCase() + '-area" d="' + area + '"></path><path class="history-line ' + person.toLowerCase() + '-line" d="' + path + '"></path>' + dots + lineLabel;
 }
 
 function smoothLinePath(points) {
@@ -509,10 +600,44 @@ function saveSettings() {
     Tal: Number(els.targetTal.value || DEFAULT_TARGETS.Tal),
     Sophie: Number(els.targetSophie.value || DEFAULT_TARGETS.Sophie)
   };
+  orderedPeople().forEach((person) => targetMetState.set(cardKey(person, state.selectedStart), isTargetMet(person, state.selectedStart)));
   saveState();
   closeSettings();
   render();
   syncTargets();
+}
+
+function launchTargetConfetti(person) {
+  if (!els.confettiStage || !PEOPLE.includes(person)) return;
+  const prefersLessMotion = state.settings.reduceMotion || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const burst = document.createElement("div");
+  burst.className = "confetti-burst " + (person === "Tal" ? "tal-confetti" : "sophie-confetti") + (prefersLessMotion ? " quiet-confetti" : "");
+
+  const toast = document.createElement("div");
+  toast.className = "goal-toast";
+  toast.innerHTML = '<span aria-hidden="true">★</span><strong>' + escapeHtml(person) + ' hit the target!</strong><small>Sweet dreams, goal unlocked</small>';
+  burst.appendChild(toast);
+
+  if (!prefersLessMotion) {
+    const colors = ["var(--tal)", "var(--sophie)", "var(--accent)", "#ffffff", "#a9f5c8", "#cbb8ff"];
+    for (let index = 0; index < 72; index += 1) {
+      const piece = document.createElement("i");
+      piece.className = "confetti-piece shape-" + (index % 4);
+      piece.style.setProperty("--burst-x", (Math.random() * 360 - 180).toFixed(0) + "px");
+      piece.style.setProperty("--burst-y", (-80 - Math.random() * 230).toFixed(0) + "px");
+      piece.style.setProperty("--drift", (Math.random() * 220 - 110).toFixed(0) + "px");
+      piece.style.setProperty("--delay", (Math.random() * 0.34).toFixed(2) + "s");
+      piece.style.setProperty("--duration", (2.35 + Math.random() * 1.25).toFixed(2) + "s");
+      piece.style.setProperty("--turn", (420 + Math.random() * 980).toFixed(0) + "deg");
+      piece.style.setProperty("--size", (6 + Math.random() * 7).toFixed(0) + "px");
+      piece.style.setProperty("--confetti-color", colors[index % colors.length]);
+      burst.appendChild(piece);
+    }
+  }
+
+  els.confettiStage.appendChild(burst);
+  if (els.goalAnnouncer) els.goalAnnouncer.textContent = person + " hit the sleep target!";
+  window.setTimeout(() => burst.remove(), prefersLessMotion ? 1900 : 4100);
 }
 
 function setTheme(theme) {
@@ -861,6 +986,13 @@ function bindEvents() {
   els.entryModal.addEventListener("click", (event) => {
     if (event.target === els.entryModal) closeEntryModal();
   });
+  document.querySelector("[data-close-duration]").addEventListener("click", closeDurationModal);
+  els.durationBackdrop.addEventListener("click", closeDurationModal);
+  els.durationModal.addEventListener("click", (event) => {
+    if (event.target === els.durationModal) closeDurationModal();
+  });
+  els.durationRange.addEventListener("input", () => setCustomMinutes(els.durationRange.value));
+  els.durationAdd.addEventListener("click", addCustomDuration);
 
   document.addEventListener("change", (event) => {
     if (event.target === els.compact) {
@@ -869,17 +1001,30 @@ function bindEvents() {
       render();
       return;
     }
-
-    const customSelect = event.target.closest("[data-custom-duration]");
-    if (customSelect) {
-      customAddFromSelect(customSelect);
-    }
   });
 
   document.addEventListener("click", (event) => {
     const quick = event.target.closest("[data-quick-add]");
     if (quick) {
       quickAdd(quick.dataset.quickAdd, quick.dataset.minutes);
+      return;
+    }
+
+    const moreDuration = event.target.closest("[data-open-duration]");
+    if (moreDuration) {
+      openDurationModal(moreDuration.dataset.openDuration, moreDuration);
+      return;
+    }
+
+    const durationStep = event.target.closest("[data-duration-step]");
+    if (durationStep) {
+      setCustomMinutes(state.customMinutes + Number(durationStep.dataset.durationStep));
+      return;
+    }
+
+    const durationPreset = event.target.closest("[data-duration-preset]");
+    if (durationPreset) {
+      setCustomMinutes(durationPreset.dataset.durationPreset);
       return;
     }
 
@@ -922,6 +1067,14 @@ function bindEvents() {
       window.scrollTo({ top: 0, behavior: state.settings.reduceMotion ? "auto" : "smooth" });
       render();
     }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!els.durationModal.hidden) closeDurationModal();
+    else if (!els.entryModal.hidden) closeEntryModal();
+    else if (!els.historyModal.hidden) closeHistory();
+    else if (!els.settingsModal.hidden) closeSettings();
   });
 
   document.addEventListener("visibilitychange", () => {

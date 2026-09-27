@@ -9,9 +9,10 @@ Phone-first newborn sleep tracker for Tal and Sophie.
 - Tracks sleep in 9 PM to 9 PM windows.
 - Shows Tal and Sophie as the main two tiles.
 - Shows target-met stars on daily tiles and in the history graph.
-- Includes a scrollable sleep-history chart with the most recent data visible first.
-- Quick-adds common sleep chunks: 30m, 45m, 1h, 1h 30m, 2h, and 3h.
-- Supports a quieter custom add flow where choosing a duration from `More...` immediately adds it.
+- Includes a scrollable sleep-history chart with Tal and Sophie labeled directly beside their lines.
+- Quick-adds common sleep chunks: 15m, 30m, 45m, 1h, 1h 30m, 2h, and 3h.
+- Opens `More...` as a phone-friendly duration sheet with 15-minute controls, a slider, and longer-duration presets.
+- Celebrates each below-target to target-met crossing with a mobile-friendly confetti burst (and can celebrate again after the total drops below target).
 - Lets each phone choose who appears first with the local `Who am I?` setting.
 - Lets each phone choose its own theme and compact mode.
 - Syncs entries through a Google Sheet-backed Apps Script.

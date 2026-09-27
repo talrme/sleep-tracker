@@ -24,7 +24,9 @@ Live URL: https://talrme.github.io/sleep-tracker/
 - local settings: `self`, `theme`, `compact`, `reduceMotion`, `autoSync`
 - backend-backed settings: `targets.Tal`, `targets.Sophie`
 - spreadsheet link: read from `config.js` or from `snapshot.spreadsheetUrl`
-- history chart: generated client-side from non-deleted entries, omitting zero-hour points and marking target-met points with stars
+- quick add: 15m, 30m, 45m, 1h, 1h 30m, 2h, and 3h; `More...` opens the custom-duration bottom sheet
+- target celebration: client-side transition tracking fires confetti only when a visible person/period crosses from below target to target met; dropping below re-arms it
+- history chart: generated client-side from non-deleted entries, omitting zero-hour points, marking target-met points with stars, and labeling Tal and Sophie beside their latest plotted points
 
 ## Backend Contract
 

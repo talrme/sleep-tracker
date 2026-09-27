@@ -9,8 +9,8 @@
   <link rel="icon" href="images/sleep-tracker-icon.png" type="image/png">
   <link rel="shortcut icon" href="images/sleep-tracker-icon.png" type="image/png">
   <link rel="apple-touch-icon" href="images/sleep-tracker-icon.png">
-  <link rel="manifest" href="manifest.webmanifest?v=20260919-today-pill">
-  <link rel="stylesheet" href="styles.css?v=20260919-today-pill">
+  <link rel="manifest" href="manifest.webmanifest?v=20260926-delight">
+  <link rel="stylesheet" href="styles.css?v=20260926-delight">
 </head>
 <body>
   <main class="app-shell">
@@ -22,8 +22,8 @@
       <button type="button" data-prev-period aria-label="Previous sleep day">‹</button>
       <div>
         <div class="period-title-line">
+          <span class="today-pill" data-today-pill hidden><i aria-hidden="true">✦</i>Today</span>
           <strong data-period-title>9/17 to 9/18</strong>
-          <span class="today-pill" data-today-pill hidden>Today</span>
         </div>
         <span data-period-range>Thu 9/17 9 PM to Fri 9/18 9 PM</span>
       </div>
@@ -168,7 +168,40 @@
     </div>
   </section>
 
-  <script src="config.js?v=20260919-today-pill"></script>
-  <script src="app.js?v=20260919-today-pill"></script>
+  <div class="modal-backdrop" data-duration-backdrop hidden></div>
+  <section class="duration-modal" data-duration-modal hidden role="dialog" aria-modal="true" aria-labelledby="duration-title">
+    <div class="duration-panel">
+      <header>
+        <div>
+          <p class="eyebrow" data-duration-person>For Tal</p>
+          <h2 id="duration-title">Add more sleep</h2>
+        </div>
+        <button type="button" class="plain-x" data-close-duration aria-label="Close duration picker">×</button>
+      </header>
+
+      <div class="duration-picker">
+        <button type="button" class="duration-step" data-duration-step="-15" aria-label="Subtract 15 minutes">−</button>
+        <output class="duration-value" data-duration-value>15m</output>
+        <button type="button" class="duration-step" data-duration-step="15" aria-label="Add 15 minutes">+</button>
+      </div>
+
+      <input class="duration-range" data-duration-range type="range" min="15" max="540" step="15" value="15" aria-label="Sleep duration">
+
+      <div class="duration-presets" aria-label="Longer duration suggestions">
+        <button type="button" data-duration-preset="150">2h 30m</button>
+        <button type="button" data-duration-preset="240">4h</button>
+        <button type="button" data-duration-preset="360">6h</button>
+        <button type="button" data-duration-preset="480">8h</button>
+      </div>
+
+      <button type="button" class="primary duration-add-button" data-add-duration>Add 15m for Tal</button>
+    </div>
+  </section>
+
+  <div class="confetti-stage" data-confetti-stage aria-hidden="true"></div>
+  <div class="sr-only" data-goal-announcer aria-live="polite"></div>
+
+  <script src="config.js?v=20260926-delight"></script>
+  <script src="app.js?v=20260926-delight"></script>
 </body>
 </html>
